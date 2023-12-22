@@ -5,11 +5,11 @@ import (
 )
 
 type NetHandler struct {
-	mux               *http.ServeMux
-	generalMiddleware GeneralMiddleWare
+	Mux               *http.ServeMux
+	GeneralMiddleware GeneralMiddleWare
 }
 
 func NewNetwork(mux *http.ServeMux) *NetHandler {
-	h := &NetHandler{mux: mux, generalMiddleware: generalMiddleWare}
+	h := &NetHandler{Mux: mux, GeneralMiddleware: generalMiddleWare}
 	return h
 }
