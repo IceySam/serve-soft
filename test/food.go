@@ -77,7 +77,7 @@ func update(w http.ResponseWriter, r *http.Request)  {
 			resp.RepondBadRequest(w, r, err.Error())
 		} else {
 			foods[id] = f.Name
-			resp.RespondAccepted(w,r)
+			resp.RespondUpdated(w,r)
 		}
 		
 	} else {
