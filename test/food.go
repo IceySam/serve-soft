@@ -24,14 +24,14 @@ func add(w http.ResponseWriter, r *http.Request) {
 		resp.RepondBadRequest(w, r, "Method not allowed")
 	} else {
 		f := &Food{}
-        err := json.NewDecoder(r.Body).Decode(f)
+		err := json.NewDecoder(r.Body).Decode(f)
 		if err != nil {
 			resp.RepondBadRequest(w, r, "Could not parse json data")
 		} else if err := f.validate(); err != nil {
 			resp.RepondBadRequest(w, r, err.Error())
 		} else {
 			foods[len(foods)] = f.Name
-			resp.RespondCreated(w,r, f,f.Name)
+			resp.RespondCreated(w, r, f, f.Name)
 		}
 	}
 }
@@ -61,25 +61,24 @@ func getAll(w http.ResponseWriter, r *http.Request) {
 	resp.RespondOk(w, r, data)
 }
 
-func update(w http.ResponseWriter, r *http.Request)  {
+func update(w http.ResponseWriter, r *http.Request) {
 	last := strings.Split(r.URL.Path, "/")
 	id, err := strconv.Atoi(last[3])
 	if err != nil {
 		resp.RepondBadRequest(w, r, err.Error())
-	}else if r.Method != http.MethodPut {
+	} else if r.Method != http.MethodPut {
 		resp.RepondBadRequest(w, r, "Method not allowed")
 	} else if id > -1 && id < len(foods) {
 		f := &Food{}
-        err := json.NewDecoder(r.Body).Decode(f)
+		err := json.NewDecoder(r.Body).Decode(f)
 		if err != nil {
 			resp.RepondBadRequest(w, r, "Could not parse json data")
 		} else if err := f.validate(); err != nil {
 			resp.RepondBadRequest(w, r, err.Error())
 		} else {
 			foods[id] = f.Name
-			resp.RespondUpdated(w,r)
+			resp.RespondUpdated(w, r)
 		}
-		
 	} else {
 		resp.RepondBadRequest(w, r, fmt.Sprintf("out of range: %d of %d", id, len(foods)))
 	}
