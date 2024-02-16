@@ -1,11 +1,13 @@
 package utility
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -37,37 +39,44 @@ func Validate(s interface{}) error {
 /*
  Convert struct to map
 */
-func ToMap(s interface{}) (map[string]interface{}, string, error) {
-	ty := strings.Split(reflect.TypeOf(s).String(), ".")[1]
+func ToMap(s interface{}) (map[string]interface{}, reflect.Type, string, error) {
+	ty := reflect.TypeOf(s)
+	name := strings.Split(ty.String(), ".")[1]
 	var m map[string]interface{}
 	data, err := json.Marshal(s)
 	if err != nil {
-		return nil, ty, err
+		return nil, ty, name, err
 	}
 	err = json.Unmarshal(data, &m)
 	if err != nil {
-		return nil, ty, err
+		return nil, ty, name, err
 	}
 
-	return m, ty, nil
+	return m, ty, name, nil
 }
 
-func ToStuct(m map[string]interface{}, i interface{})  {
-	structVal := reflect.ValueOf(i).Elem()
-    
-	for k, v := range m {
-		field := structVal.FieldByName(k)
-		if !field.IsValid() {
-			log.Fatalf("No such field: %s in obj", k)
-		}
-		if !field.CanSet() {
-			log.Fatalf("Cannot set %s field value", k)
-		}
-		if field.Type() != reflect.TypeOf(v) {
-			log.Fatalf("Cannot assign %s to %s",reflect.TypeOf(v),  field.Type())
-		}
-		field.Set(reflect.ValueOf(v))
+func ToStuct(m map[string]interface{}, i interface{}) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		log.Fatal(err)
 	}
+	err = json.Unmarshal(data, i)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func MakeStruct(m map[string]interface{}, ty reflect.Type) interface{} {
+	val := make([]reflect.StructField, 0)
+	for k, v := range m {
+		val = append(val, reflect.StructField{
+			Name:    k,
+			Type:    reflect.TypeOf(v),
+			PkgPath: ty.String(),
+		})
+	}
+	res := reflect.New(reflect.StructOf(val)).Elem()
+	return res
 }
 
 func MapKeys(m map[string]interface{}) []string {
@@ -79,8 +88,21 @@ func MapKeys(m map[string]interface{}) []string {
 }
 
 func TypeEquals(data any, compare any) bool {
-	if reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare)) {
-		return true
+	return reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare))
+}
+
+func ParseAny(byt sql.RawBytes) any {
+	str := string(byt)
+
+	if val, err := strconv.ParseInt(str, 10, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseFloat(str, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseBool(str); err == nil {
+		return val
+	} else if byt == nil {
+		return "NULL"
+	} else {
+		return str
 	}
-	return false
 }

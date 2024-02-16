@@ -1,13 +1,12 @@
 package test
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"reflect"
 
 	"github.com/IceySam/serve-soft/utility"
-	"github.com/jackc/pgx/v5"
 )
 
 type Completer interface {
@@ -44,11 +43,11 @@ type partialQuery struct {
 	part      string
 	query     Query
 	data      map[string]interface{}
-	strutType string
+	strutType reflect.Type
 }
 
 type Query struct {
-	Conn *pgx.Conn
+	Conn *sql.DB
 }
 
 // create table
@@ -63,7 +62,7 @@ func (q Query) Create(name string, definition ...string) error {
 		}
 	}
 
-	_, err := q.Conn.Exec(context.Background(), stmt)
+	_, err := q.Conn.Exec(stmt)
 	if err != nil {
 		return err
 	}
@@ -72,35 +71,29 @@ func (q Query) Create(name string, definition ...string) error {
 
 // insert into table
 func (q Query) Insert(i interface{}) error {
-	m, ty, err := utility.ToMap(i)
+	m, _, name, err := utility.ToMap(i)
 	if err != nil {
 		return err
 	}
-	stmt := fmt.Sprintf("INSERT INTO %s (", ty)
+	keys := fmt.Sprintf("INSERT INTO %s (", name)
+	values := " VALUES ("
 	x := 1
-	for k := range m {
-		if x == len(m) {
-			stmt = fmt.Sprintf("%s%s)", stmt, k)
-		} else {
-			stmt = fmt.Sprintf("%s%s,", stmt, k)
-		}
-		x++
-	}
-	stmt = fmt.Sprintf("%s VALUES (", stmt)
-	y := 1
-	for _, v := range m {
+	for k, v := range m {
 		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 			v = fmt.Sprintf("'%v'", v)
 		}
-		if y == len(m) {
-			stmt = fmt.Sprintf("%s%v);", stmt, v)
+		if x == len(m) {
+			keys = fmt.Sprintf("%s%s)", keys, k)
+			values = fmt.Sprintf("%s%v);", values, v)
 		} else {
-			stmt = fmt.Sprintf("%s%v,", stmt, v)
+			keys = fmt.Sprintf("%s%s,", keys, k)
+			values = fmt.Sprintf("%s%v,", values, v)
 		}
-		y++
+		x++
 	}
+	stmt := fmt.Sprintf("%s%s", keys, values)
 
-	_, err = q.Conn.Exec(context.Background(), stmt)
+	_, err = q.Conn.Exec(stmt)
 	if err != nil {
 		return err
 	}
@@ -126,7 +119,7 @@ func (p *partialQuery) Set(m map[string]interface{}) Completer {
 
 // Apply implements Completer.
 func (p *partialQuery) Apply() error {
-	_, err := p.query.Conn.Exec(context.Background(), p.part+";")
+	_, err := p.query.Conn.Exec(p.part + ";")
 	if err != nil {
 		return err
 	}
@@ -149,7 +142,6 @@ func (p *partialQuery) One(i interface{}) error {
 	}
 
 	utility.ToStuct(items[0], i)
-
 	return nil
 }
 
@@ -210,48 +202,51 @@ func (p *partialQuery) In(field string, values []interface{}) Completer {
 
 // update table
 func (q Query) Update(i interface{}) Completer {
-	m, ty, err := utility.ToMap(i)
+	m, ty, name, err := utility.ToMap(i)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	stmt := fmt.Sprintf("UPDATE %s SET ", ty)
+	stmt := fmt.Sprintf("UPDATE %s SET ", name)
 
 	return &partialQuery{part: stmt, query: q, data: m, strutType: ty}
 }
 
 // delete data
 func (q Query) Delete(i interface{}) Completer {
-	m, ty, err := utility.ToMap(i)
+	m, ty, name, err := utility.ToMap(i)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	stmt := fmt.Sprintf("DELETE FROM %s", ty)
+	stmt := fmt.Sprintf("DELETE FROM %s", name)
 	return &partialQuery{part: stmt, query: q, data: m, strutType: ty}
 }
 
 // find all from relation
 func (q Query) FindAll(i interface{}) ([]map[string]interface{}, error) {
-	m, ty, err := utility.ToMap(i)
+	m, ty, name, err := utility.ToMap(i)
 	if err != nil {
 		return nil, err
 	}
 	p := &partialQuery{part: "", query: q, data: m, strutType: ty}
-	return p.fetchData(fmt.Sprintf("SELECT * FROM %s;", ty))
+	return p.fetchData(fmt.Sprintf("SELECT * FROM %s;", name))
 }
 
 // find all from relation
 func (p *partialQuery) fetchData(stmt string) ([]map[string]interface{}, error) {
-	rows, err := p.query.Conn.Query(context.Background(), stmt)
+	rows, err := p.query.Conn.Query(stmt)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	fieldDes := rows.FieldDescriptions()
+	fieldDes, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
 	items := make([]map[string]interface{}, 0)
 
 	for rows.Next() {
-		columns := make([]interface{}, len(fieldDes))
+		columns := make([]sql.RawBytes, len(fieldDes))
 		item := make([]interface{}, len(fieldDes))
 		for x := range columns {
 			item[x] = &columns[x]
@@ -260,12 +255,11 @@ func (p *partialQuery) fetchData(stmt string) ([]map[string]interface{}, error) 
 		if err := rows.Scan(item...); err != nil {
 			return nil, err
 		}
-		res := make(map[string]interface{}, len(p.data))
-		for index, val := range fieldDes {
-			r := item[index].(*interface{})
-			res[val.Name] = *r
-		}
 
+		res := make(map[string]interface{}, len(p.data))
+		for i, col := range columns {
+			res[fieldDes[i]] = utility.ParseAny(col)
+		}
 		items = append(items, res)
 	}
 	return items, nil
@@ -273,10 +267,10 @@ func (p *partialQuery) fetchData(stmt string) ([]map[string]interface{}, error) 
 
 // find data from relation
 func (q Query) Find(i interface{}) Completer {
-	m, ty, err := utility.ToMap(i)
+	m, ty, name, err := utility.ToMap(i)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	stmt := fmt.Sprintf("SELECT * FROM %s", ty)
+	stmt := fmt.Sprintf("SELECT * FROM %s", name)
 	return &partialQuery{part: stmt, query: q, data: m, strutType: ty}
 }
