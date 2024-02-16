@@ -1,30 +1,30 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
-type sql struct {
+type sqlStr struct {
+	driver string
 	conStr string
 }
 
-func (s *sql) makeConnection() *pgx.Conn {
-	connection, err := pgx.Connect(context.Background(), s.conStr)
+func (s *sqlStr) makeConnection() *sql.DB {
+	connection, err := sql.Open(s.driver, s.conStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	// defer connection.Close(context.Background())
 
 	return connection
 }
 
-// urlExample := "postgres://username:password@localhost:5432/database_name"
-func New(conStr string) *pgx.Conn {
-	c := &sql{ conStr: conStr }
+func New(diverName string, conStr string) *sql.DB {
+	c := &sqlStr{ conStr: conStr, driver: diverName }
 	return c.makeConnection()
 }
