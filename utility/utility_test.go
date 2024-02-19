@@ -241,12 +241,6 @@ func TestTypeEquals(t *testing.T) {
 			compare:   10,
 			wantEqual: false,
 		},
-		// {
-		// 	name:      "[]map vs []map",
-		// 	data:      []map[string]interface{}{{"id": 1}},
-		// 	compare:   []map[string]interface{}{},
-		// 	wantEqual: false,
-		// },
 	}
 
 	for _, tt := range tests {
