@@ -24,7 +24,7 @@ func (s *sqlStr) makeConnection() *sql.DB {
 	return connection
 }
 
-func New(diverName string, conStr string) *sql.DB {
-	c := &sqlStr{ conStr: conStr, driver: diverName }
+func New(driverName string, conStr string) *sql.DB {
+	c := &sqlStr{ conStr: conStr, driver: driverName }
 	return c.makeConnection()
 }

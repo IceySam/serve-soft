@@ -1,4 +1,4 @@
-package test
+package examples
 
 import "github.com/IceySam/serve-soft/utility"
 

@@ -1,4 +1,4 @@
-package test
+package examples
 
 import (
 	"database/sql"
@@ -22,7 +22,7 @@ type Completer interface {
 	/*
 	 * 	execute select or queries returning many rows
 	 */
-	Many() ([]map[string]interface{}, error)
+	Many(i interface{}) error
 	/*
 	 * 	execute select scan into provided interface
 	 */
@@ -127,9 +127,19 @@ func (p *partialQuery) Apply() error {
 }
 
 // Many implements Completer.
-func (p *partialQuery) Many() ([]map[string]interface{}, error) {
+func (p *partialQuery) Many(i interface{}) error {
 	stmt := fmt.Sprintf("%s;", p.part)
-	return p.fetchData(stmt)
+
+	items, err := p.fetchData(stmt)
+	if err != nil {
+		return err
+	}
+
+	err = utility.ToStructArray(items, i)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }
 
 // One implements Completer.
@@ -141,7 +151,7 @@ func (p *partialQuery) One(i interface{}) error {
 		return err
 	}
 
-	utility.ToStuct(items[0], i)
+	utility.ToStruct(items[0], i)
 	return nil
 }
 

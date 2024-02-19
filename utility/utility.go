@@ -3,9 +3,7 @@ package utility
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,23 +13,22 @@ import (
  Validate request data
 */
 func Validate(s interface{}) error {
-	errs := ""
+	var errs error
 
 	var m map[string]interface{}
 	data, err := json.Marshal(s)
 	if err != nil {
-		errs = err.Error()
+		errs = err
 	}
 	json.Unmarshal(data, &m)
 
 	for k, v := range m {
 		if v == nil || v == "" || v == 0 {
-			errs = fmt.Sprintf("%s, %s is required", errs, k)
+			errs = fmt.Errorf("%v, %v is required", errs, k)
 		}
 	}
-
-	if len(errs) > 0 {
-		return errors.New(errs)
+	if errs != nil {
+		return errs
 	}
 	return nil
 }
@@ -51,19 +48,48 @@ func ToMap(s interface{}) (map[string]interface{}, reflect.Type, string, error) 
 	if err != nil {
 		return nil, ty, name, err
 	}
-
+	if ty.Kind() == reflect.Struct && ty.NumField() != len(m) {
+		return nil, ty, name, fmt.Errorf("private filed")
+	}
+	if ty.Kind() == reflect.Ptr {
+		v := reflect.ValueOf(s).Elem()
+		if v.NumField() != len(m) {
+			return nil, ty, name, fmt.Errorf("private filed")
+		}
+	}
 	return m, ty, name, nil
 }
 
-func ToStuct(m map[string]interface{}, i interface{}) {
+func ToStruct(m map[string]interface{}, i interface{}) error {
 	data, err := json.Marshal(m)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = json.Unmarshal(data, i)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	ty := reflect.ValueOf(i).Elem()
+	if ty.Kind() == reflect.Struct && ty.NumField() != len(m) {
+		return fmt.Errorf("private field")
+	}
+	return nil
+}
+
+func ToStructArray(m []map[string]interface{}, i interface{}) error {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, i)
+	if err != nil {
+		return err
+	}
+	ty := reflect.ValueOf(i).Elem()
+	if ty.Kind() == reflect.Slice && len(m) > 0 && ty.Index(0).NumField() != len(m[0]) {
+		return fmt.Errorf("private field")
+	}
+	return nil
 }
 
 func MakeStruct(m map[string]interface{}, ty reflect.Type) interface{} {
@@ -88,6 +114,11 @@ func MapKeys(m map[string]interface{}) []string {
 }
 
 func TypeEquals(data any, compare any) bool {
+	if (data == nil && compare == nil) {
+		return true
+	} else if (data == nil && compare != nil) {
+		return false
+	}
 	return reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare))
 }
 
