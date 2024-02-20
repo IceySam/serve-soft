@@ -225,8 +225,8 @@ func TestTypeEquals(t *testing.T) {
 		},
 		{
 			name:      "interface vs concrete type",
-			data:      10,
-			compare:   interface{}(10),
+			data:      12,
+			compare:   interface{}(12),
 			wantEqual: true,
 		},
 		{
