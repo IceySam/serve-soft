@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/IceySam/serve-soft/db"
-	"github.com/IceySam/serve-soft/examples"
+	// "github.com/IceySam/serve-soft/examples"
 	"github.com/joho/godotenv"
 )
 
@@ -19,7 +19,7 @@ type car struct {
 func main() {
 	// mux := http.NewServeMux()
 	// netHandler := network.NewNetwork(mux)
-	// test.Setup(netHandler)
+	// examples.Setup(netHandler)
 	// http.ListenAndServe(":3000", mux)
 
 	ENV, err := godotenv.Read(".env")
@@ -28,11 +28,14 @@ func main() {
 	}
 	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"],ENV["DB_PASSWORD"],ENV["DB_HOST"],ENV["DB_PORT"], ENV["DB_NAME"])
 
-	// conn := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
-	conn := db.New("mysql", mysqlConStr)
+	// conn, err := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
+	conn, err := db.New("mysql", mysqlConStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer conn.Close()
 
-	q := examples.Query{Conn: conn}
+	q := db.Query{Conn: conn}
 	// err := q.Create("car", "id INT NOT NULL AUTO_INCREMENT", "brand VARCHAR(255)", "model VARCHAR(255)", "year INT", "PRIMARY KEY (id)")
 	// err := q.Insert(&car{Brand: "Lambda", Model: "owl", Year: 2017})
 	// err := q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
