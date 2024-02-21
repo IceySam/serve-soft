@@ -14,17 +14,17 @@ type sqlStr struct {
 	conStr string
 }
 
-func (s *sqlStr) makeConnection() *sql.DB {
+func (s *sqlStr) makeConnection() (*sql.DB, error) {
 	connection, err := sql.Open(s.driver, s.conStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	return connection
+	return connection, nil
 }
 
-func New(driverName string, conStr string) *sql.DB {
+func New(driverName string, conStr string) (*sql.DB, error) {
 	c := &sqlStr{ conStr: conStr, driver: driverName }
 	return c.makeConnection()
 }
