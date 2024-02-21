@@ -69,10 +69,26 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 	if err != nil {
 		return err
 	}
-	ty := reflect.ValueOf(i).Elem()
-	if ty.Kind() == reflect.Struct && ty.NumField() != len(m) {
-		return fmt.Errorf("private field")
+
+	ty := reflect.TypeOf(i).Elem()
+	if ty.Kind() != reflect.Struct {
+		return fmt.Errorf("requires struct found, %s", ty.Kind())
 	}
+	conv := make(map[string]interface{}, len(m))
+	for k, v := range m {
+		conv[strings.ToLower(k)] = v
+	}
+	for i := 0; i < ty.NumField(); i++ {
+		key := conv[strings.ToLower(ty.Field(i).Name)]
+		if key == nil {
+			err = fmt.Errorf("field %s unavailable", ty.Field(i).Name)
+			break
+		}
+	}
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -85,10 +101,30 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 	if err != nil {
 		return err
 	}
-	ty := reflect.ValueOf(i).Elem()
-	if ty.Kind() == reflect.Slice && len(m) > 0 && ty.Index(0).NumField() != len(m[0]) {
-		return fmt.Errorf("private field")
+
+	ty := reflect.TypeOf(i).Elem()
+	if ty.Kind() != reflect.Slice || ty.Elem().Kind() != reflect.Struct {
+		return err
 	}
+
+	if len(m) > 0 {
+		conv := make(map[string]interface{}, len(m[0]))
+		for k, v := range m[0] {
+			conv[strings.ToLower(k)] = v
+		}
+
+		for i := 0; i < ty.Elem().NumField(); i++ {
+			val := conv[strings.ToLower(ty.Elem().Field(i).Name)]
+			if val == nil {
+				err = fmt.Errorf("field %s unavailable", ty.Elem().Field(i).Name)
+				break
+			}
+		}
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -114,9 +150,9 @@ func MapKeys(m map[string]interface{}) []string {
 }
 
 func TypeEquals(data any, compare any) bool {
-	if (data == nil && compare == nil) {
+	if data == nil && compare == nil {
 		return true
-	} else if (data == nil && compare != nil) {
+	} else if data == nil && compare != nil {
 		return false
 	}
 	return reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare))
