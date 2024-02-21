@@ -12,8 +12,8 @@ import (
 type car struct {
 	Id    int
 	Brand string
-	Model string
-	Year  int
+	// Model string
+	Year int
 }
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"],ENV["DB_PASSWORD"],ENV["DB_HOST"],ENV["DB_PORT"], ENV["DB_NAME"])
+	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"], ENV["DB_PASSWORD"], ENV["DB_HOST"], ENV["DB_PORT"], ENV["DB_NAME"])
 
 	// conn, err := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
 	conn, err := db.New("mysql", mysqlConStr)
@@ -45,7 +45,7 @@ func main() {
 	// err := q.Delete(&car{}).Where(map[string]any{"brand": "Toyota"}).Apply()
 	// cars, err := q.FindAll(&car{})
 	// c := car{}
-	// err := q.Find(&car{}).One(&c)
+	// err = q.Find(&car{}).One(&c)
 	cars := make([]car, 0)
 	err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
 	if err != nil {
