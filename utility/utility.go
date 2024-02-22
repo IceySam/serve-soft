@@ -38,7 +38,7 @@ func Validate(s interface{}) error {
 */
 func ToMap(s interface{}) (map[string]interface{}, reflect.Type, string, error) {
 	ty := reflect.TypeOf(s)
-	name := strings.Split(ty.String(), ".")[1]
+	name := strings.ToLower(strings.Split(ty.String(), ".")[1])
 	var m map[string]interface{}
 	data, err := json.Marshal(s)
 	if err != nil {

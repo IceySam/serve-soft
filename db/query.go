@@ -249,6 +249,9 @@ func (p *partialQuery) One(i interface{}) error {
 	}
 
 	utility.ToStruct(items[0], i)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -262,6 +265,9 @@ func (p *partialQuery) OneCtx(ctx context.Context, i interface{}) error {
 	}
 
 	utility.ToStruct(items[0], i)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
