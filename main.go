@@ -14,7 +14,7 @@ type car struct {
 	Id    int
 	Brand string
 	Model string
-	Year int
+	Year  int
 }
 
 func main() {
@@ -49,13 +49,13 @@ func main() {
 	// err := q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "elephant"}).In("model", []interface{}{"Tiger", "viper"}).Apply()
 	// err := q.Delete(&car{}).Where(map[string]any{"brand": "Toyota"}).Apply()
 	// cars, err := q.FindAll(&car{})
-	cars, err := q.FindAllCtx(context.Background(), &car{})
+	// cars, err := q.FindAllCtx(context.Background(), &car{})
 	// c := car{}
 	// err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
-	// cars := make([]car, 0)
+	cars := make([]car, 0)
 	// err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
-	// err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).ManyCtx(context.Background(), &cars)
+	err = q.Find(&car{}).Where(map[string]interface{}{"year": 2020}).ManyCtx(context.Background(), &cars)
 	if err != nil {
 		log.Fatal(err)
 	}
