@@ -65,7 +65,7 @@ type Query struct {
 
 // create table
 func (q Query) Create(name string, definition ...string) error {
-	stmt := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(\n", name)
+	stmt := fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s`(\n", name)
 	for i := 0; i < len(definition); i++ {
 		stmt = fmt.Sprintf("%s %s", stmt, definition[i])
 		if i+1 < len((definition)) {
@@ -84,7 +84,7 @@ func (q Query) Create(name string, definition ...string) error {
 
 // create table with context
 func (q Query) CreateCtx(ctx context.Context, name string, definition ...string) error {
-	stmt := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(\n", name)
+	stmt := fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s`(\n", name)
 	for i := 0; i < len(definition); i++ {
 		stmt = fmt.Sprintf("%s %s", stmt, definition[i])
 		if i+1 < len((definition)) {
@@ -107,10 +107,11 @@ func (q Query) Insert(i interface{}) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	keys := fmt.Sprintf("INSERT INTO %s (", name)
+	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
 	values := " VALUES ("
 	x := 1
 	for k, v := range m {
+		k = fmt.Sprintf("`%s`", k)
 		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 			v = fmt.Sprintf("'%v'", v)
 		}
@@ -143,10 +144,11 @@ func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	keys := fmt.Sprintf("INSERT INTO %s (", name)
+	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
 	values := " VALUES ("
 	x := 1
 	for k, v := range m {
+		k = fmt.Sprintf("`%s`", k)
 		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 			v = fmt.Sprintf("'%v'", v)
 		}
@@ -178,9 +180,9 @@ func (p *partialQuery) Set(m map[string]interface{}) Completer {
 	index := 1
 	for k, v := range m {
 		if index == len(m) {
-			stmt = fmt.Sprintf("%s%s='%v'", stmt, k, v)
+			stmt = fmt.Sprintf("%s%s=%v", stmt, k, v)
 		} else {
-			stmt = fmt.Sprintf("%s%s='%v',", stmt, k, v)
+			stmt = fmt.Sprintf("%s%s=%v,", stmt, k, v)
 		}
 		index++
 	}
@@ -292,7 +294,7 @@ func (p *partialQuery) Where(m any) Completer {
 
 		x := 1
 		for k, v := range list[i] {
-			stmt = fmt.Sprintf("%s%s='%v'", stmt, k, v)
+			stmt = fmt.Sprintf("%s`%s`='%v'", stmt, k, v)
 			if x < len(list[i]) {
 				stmt = fmt.Sprintf("%s AND ", stmt)
 			}
