@@ -84,12 +84,42 @@ func update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		resp.RepondBadRequest(w, r, "Method not allowed")
+	} else {
+		u := &User{}
+		err := json.NewDecoder(r.Body).Decode(u)
+
+		if err != nil {
+			resp.RepondBadRequest(w, r, "Could not parse json data")
+		} else if err := u.validate(); err != nil {
+			resp.RepondBadRequest(w, r, err.Error())
+		} else {
+			_, token, err := network.GenerateClaim(u.Id, u.FirstName, u.OtherNames, "test", 1800)
+			if err != nil {
+				resp.RepondBadRequest(w, r, err.Error())
+			} else {
+				data := make(map[string]any)
+				data["user"] = u
+				data["token"] = token
+				resp.RespondCreated(w, r, data, "Login successful")
+			}
+		}
+	}
+}
+
 func Setup(h *network.NetHandler) {
 	// initiate responses
 	resp = network.Responses{}
 
+	// auth middleware
+	auth := h.Middlewares["auth"]
+
+	h.Mux.HandleFunc("/auth/login", login) // should be in auth package
 	h.Mux.HandleFunc("/foods/add", add)
 	h.Mux.HandleFunc("/foods/update/", update)
-	h.Mux.HandleFunc("/foods", getAll)
+	h.Mux.Handle("/foods", auth(http.HandlerFunc(getAll)))
 	h.Mux.HandleFunc("/foods/", getOne)
+
 }

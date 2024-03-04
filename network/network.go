@@ -6,10 +6,14 @@ import (
 
 type NetHandler struct {
 	Mux               *http.ServeMux
-	GeneralMiddleware GeneralMiddleWare
+	Middlewares map[string]GeneralMiddleWare
 }
 
-func NewNetwork(mux *http.ServeMux) *NetHandler {
-	h := &NetHandler{Mux: mux, GeneralMiddleware: generalMiddleWare}
+func NewNetwork(mux *http.ServeMux, middlewares ...map[string]GeneralMiddleWare) *NetHandler {
+	mid := map[string]GeneralMiddleWare { "auth": auth, "general": general}
+	if len(middlewares) > 0 {
+		mid = middlewares[0]
+	}
+	h := &NetHandler{Mux: mux, Middlewares: mid}
 	return h
 }

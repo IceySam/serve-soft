@@ -9,7 +9,7 @@ import (
 type Responses struct{}
 
 // main response function
-func res(w http.ResponseWriter, r *http.Request, statusCode int, message string, data any) {
+func res(w http.ResponseWriter, _ *http.Request, statusCode int, message string, data any) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
 
@@ -44,7 +44,6 @@ func (Responses) RespondOk(w http.ResponseWriter, r *http.Request, data any, mes
 		mes = message[0]
 	}
 	res(w, r, http.StatusOK, mes, data)
-	return
 }
 
 // post request
@@ -54,25 +53,21 @@ func (Responses) RespondCreated(w http.ResponseWriter, r *http.Request, data any
 		msg = message[0]
 	}
 	res(w, r, http.StatusCreated, msg, data)
-	return
 }
 
 // accepted request
 func (Responses) RespondAccepted(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusAccepted, "process initiated", nil)
-	return
 }
 
 // put request
 func (Responses) RespondUpdated(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusNoContent, "updated", nil)
-	return
 }
 
 // delete request
 func (Responses) RespondDeleted(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusNoContent, "deleted", nil)
-	return
 }
 
 /**
@@ -90,19 +85,16 @@ func (Responses) RepondBadRequest(w http.ResponseWriter, r *http.Request, messag
 		msg = message[0]
 	}
 	res(w, r, http.StatusBadRequest, msg, nil)
-	return
 }
 
 // unauthorized request
 func (Responses) RepondUnauthorized(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusUnauthorized, "unauthorized", nil)
-	return
 }
 
 // forbidden
 func (Responses) RepondForbidden(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusForbidden, "Forbidden", nil)
-	return
 }
 
 /**

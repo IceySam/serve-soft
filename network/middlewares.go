@@ -3,16 +3,50 @@ package network
 import (
 	"log"
 	"net/http"
+	"strings"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/joho/godotenv"
 )
 
-type GeneralMiddleWare func (handler http.Handler) http.Handler
+type GeneralMiddleWare func(handler http.Handler) http.Handler
 
-func generalMiddleWare(handler http.Handler) http.Handler  {
+func general(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("General MiddleWear")
+		log.Println("General MiddleWare")
+		
+		handler.ServeHTTP(w, r)
+	})
+}
 
-		// do stuff
+func auth(handler http.Handler) http.Handler {
+	ENV, err := godotenv.Read(".env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("General MiddleWare")
+		res := Responses{}
+		token := strings.TrimSpace(r.Header.Get("token"))
 
-		handler.ServeHTTP(w,r)
+		if token == "" {
+			res.RepondUnauthorized(w, r)
+			return
+		}
+		c := &Claim{}
+		parseClaim, err := jwt.ParseWithClaims(token, c, func(t *jwt.Token) (interface{}, error) {
+			return []byte(ENV["JWT_SECRET"]), nil
+		})
+
+		if err != nil {
+			res.RepondUnauthorized(w, r)
+			return
+		}
+
+		if !parseClaim.Valid {
+			res.RepondForbidden(w, r)
+			return
+		}
+		handler.ServeHTTP(w, r)
 	})
 }
