@@ -3,13 +3,13 @@ package main
 import (
 	// "context"
 	// "fmt"
+	"context"
+	"fmt"
 	"log"
-	"net/http"
 
 	// "github.com/IceySam/serve-soft/db"
-	"github.com/IceySam/serve-soft/examples"
-	"github.com/IceySam/serve-soft/network"
-
+	"github.com/IceySam/serve-soft/db"
+	"github.com/joho/godotenv"
 	// "github.com/IceySam/serve-soft/examples"
 	// "github.com/joho/godotenv"
 )
@@ -22,26 +22,26 @@ type car struct {
 }
 
 func main() {
-	mux := http.NewServeMux()
-	netHandler := network.NewNetwork(mux)
-	examples.Setup(netHandler)
-	log.Println("Server started\nListening on port:3000...")
-	http.ListenAndServe(":3000", mux)
+	// mux := http.NewServeMux()
+	// netHandler := network.NewNetwork(mux)
+	// examples.Setup(netHandler)
+	// log.Println("Server started\nListening on port:3000...")
+	// http.ListenAndServe(":3000", mux)
 
-	// ENV, err := godotenv.Read(".env")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"], ENV["DB_PASSWORD"], ENV["DB_HOST"], ENV["DB_PORT"], ENV["DB_NAME"])
+	ENV, err := godotenv.Read(".env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"], ENV["DB_PASSWORD"], ENV["DB_HOST"], ENV["DB_PORT"], ENV["DB_NAME"])
 
 	// // conn, err := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
-	// conn, err := db.New("mysql", mysqlConStr)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer conn.Close()
+	conn, err := db.New("mysql", mysqlConStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
 
-	// q := db.Query{Conn: conn}
+	q := db.Query{Conn: conn}
 	// err := q.Create("car", "id INT NOT NULL AUTO_INCREMENT", "brand VARCHAR(255)", "model VARCHAR(255)", "year INT", "PRIMARY KEY (id)")
 	// lastId, err := q.Insert(&car{Brand: "Lambda", Model: "owl", Year: 2017})
 	// lastId, err := q.InsertCtx(context.Background(), &car{Brand: "Sonata", Model: "brail", Year: 2020})
@@ -51,6 +51,20 @@ func main() {
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 5,
 	// }).ApplyCtx(context.Background())
+	tx, err := q.Conn.BeginTx(context.Background(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+	err = q.Update(&car{}).Set(map[string]interface{}{"brand": "Dune", "model": "lion"}).Where(map[string]any{
+		"id": 5,
+	}).TxApplyCtx(context.Background(), tx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
 	// err := q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "elephant"}).In("model", []interface{}{"Tiger", "viper"}).Apply()
 	// err := q.Delete(&car{}).Where(map[string]any{"brand": "Toyota"}).Apply()
 	// cars, err := q.FindAll(&car{})
