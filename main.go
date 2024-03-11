@@ -1,17 +1,11 @@
 package main
 
 import (
-	// "context"
-	// "fmt"
-	"context"
 	"fmt"
 	"log"
 
-	// "github.com/IceySam/serve-soft/db"
 	"github.com/IceySam/serve-soft/db"
 	"github.com/joho/godotenv"
-	// "github.com/IceySam/serve-soft/examples"
-	// "github.com/joho/godotenv"
 )
 
 type car struct {
@@ -51,33 +45,33 @@ func main() {
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 5,
 	// }).ApplyCtx(context.Background())
-	tx, err := q.Conn.BeginTx(context.Background(), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer tx.Rollback()
-	err = q.Update(&car{}).Set(map[string]interface{}{"brand": "Dune", "model": "lion"}).Where(map[string]any{
-		"id": 5,
-	}).TxApplyCtx(context.Background(), tx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = tx.Commit(); err != nil {
-		log.Fatal(err)
-	}
+	// tx, err := q.Conn.BeginTx(context.Background(), nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer tx.Rollback()
+	// err = q.Update(&car{}).Set(map[string]interface{}{"brand": "Dune", "model": "lion"}).Where(map[string]any{
+	// 	"id": 5,
+	// }).TxApplyCtx(context.Background(), tx)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// if err = tx.Commit(); err != nil {
+	// 	log.Fatal(err)
+	// }
 	// err := q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "elephant"}).In("model", []interface{}{"Tiger", "viper"}).Apply()
 	// err := q.Delete(&car{}).Where(map[string]any{"brand": "Toyota"}).Apply()
 	// cars, err := q.FindAll(&car{})
 	// cars, err := q.FindAllCtx(context.Background(), &car{})
-	// c := car{}
-	// err = q.Find(&car{}).One(&c)
+	c := car{}
+	err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
 	// cars := make([]car, 0)
 	// // err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
 	// err = q.Find(&car{}).Where(map[string]interface{}{"year": 2020}).ManyCtx(context.Background(), &cars)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println(cars)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(c)
 	// fmt.Println(lastId)
 }

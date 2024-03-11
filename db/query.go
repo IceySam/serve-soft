@@ -309,7 +309,7 @@ func (p *partialQuery) Many(i interface{}) error {
 func (p *partialQuery) ManyCtx(ctx context.Context, i interface{}) error {
 	stmt := fmt.Sprintf("%s;", p.part)
 
-	items, err := p.fetchDataCtx(ctx, stmt)
+	items, err := p.fetchData(stmt, ctx)
 	if err != nil {
 		return err
 	}
@@ -325,7 +325,7 @@ func (p *partialQuery) ManyCtx(ctx context.Context, i interface{}) error {
 func (p *partialQuery) TxManyCtx(ctx context.Context, tx *sql.Tx, i interface{}) error {
 	stmt := fmt.Sprintf("%s;", p.part)
 
-	items, err := p.txFetchDataCtx(ctx, tx, stmt)
+	items, err := p.fetchData(stmt, ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -357,7 +357,7 @@ func (p *partialQuery) One(i interface{}) error {
 func (p *partialQuery) OneCtx(ctx context.Context, i interface{}) error {
 	stmt := fmt.Sprintf("%s LIMIT 1;", p.part)
 
-	items, err := p.fetchDataCtx(ctx, stmt)
+	items, err := p.fetchData(stmt, ctx)
 	if err != nil {
 		return err
 	}
@@ -373,7 +373,7 @@ func (p *partialQuery) OneCtx(ctx context.Context, i interface{}) error {
 func (p *partialQuery) TxOneCtx(ctx context.Context, tx *sql.Tx, i interface{}) error {
 	stmt := fmt.Sprintf("%s LIMIT 1;", p.part)
 
-	items, err := p.txFetchDataCtx(ctx, tx, stmt)
+	items, err := p.fetchData(stmt, ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -478,7 +478,7 @@ func (q Query) FindAllCtx(ctx context.Context, i interface{}) ([]map[string]inte
 		return nil, err
 	}
 	p := &partialQuery{part: "", query: q, data: m, strutType: ty}
-	return p.fetchDataCtx(ctx, fmt.Sprintf("SELECT * FROM %s;", name))
+	return p.fetchData(fmt.Sprintf("SELECT * FROM %s;", name), ctx)
 }
 
 // TX find all with context from relation
@@ -488,12 +488,22 @@ func (q Query) TxFindAllCtx(ctx context.Context, tx *sql.Tx, i interface{}) ([]m
 		return nil, err
 	}
 	p := &partialQuery{part: "", query: q, data: m, strutType: ty}
-	return p.txFetchDataCtx(ctx, tx, fmt.Sprintf("SELECT * FROM %s;", name))
+	return p.fetchData(fmt.Sprintf("SELECT * FROM %s;", name), ctx, tx)
 }
 
 // find all from relation
-func (p *partialQuery) fetchData(stmt string) ([]map[string]interface{}, error) {
-	rows, err := p.query.Conn.Query(stmt)
+func (p *partialQuery) fetchData(stmt string, args ...interface{}) ([]map[string]interface{}, error) {
+	var rows *sql.Rows
+	var err error
+
+	if len(args) == 0 {
+		rows, err = p.query.Conn.Query(stmt)
+	} else if len(args) == 1 {
+		rows, err = p.query.Conn.QueryContext(args[0].(context.Context), stmt)
+	} else {
+		rows, err = args[1].(*sql.Tx).QueryContext(args[0].(context.Context), stmt)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -518,75 +528,11 @@ func (p *partialQuery) fetchData(stmt string) ([]map[string]interface{}, error) 
 
 		res := make(map[string]interface{}, len(p.data))
 		for i, col := range columns {
-			res[fieldDes[i]] = utility.ParseAny(col)
-		}
-		items = append(items, res)
-	}
-	return items, nil
-}
-
-// find all with context from relation
-func (p *partialQuery) fetchDataCtx(ctx context.Context, stmt string) ([]map[string]interface{}, error) {
-	rows, err := p.query.Conn.QueryContext(ctx, stmt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	fieldDes, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	items := make([]map[string]interface{}, 0)
-
-	for rows.Next() {
-		columns := make([]sql.RawBytes, len(fieldDes))
-		item := make([]interface{}, len(fieldDes))
-		for x := range columns {
-			item[x] = &columns[x]
-		}
-
-		if err := rows.Scan(item...); err != nil {
-			return nil, err
-		}
-
-		res := make(map[string]interface{}, len(p.data))
-		for i, col := range columns {
-			res[fieldDes[i]] = utility.ParseAny(col)
-		}
-		items = append(items, res)
-	}
-	return items, nil
-}
-
-// TX find all with context from relation
-func (p *partialQuery) txFetchDataCtx(ctx context.Context, tx *sql.Tx, stmt string) ([]map[string]interface{}, error) {
-	rows, err := tx.QueryContext(ctx, stmt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	fieldDes, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	items := make([]map[string]interface{}, 0)
-
-	for rows.Next() {
-		columns := make([]sql.RawBytes, len(fieldDes))
-		item := make([]interface{}, len(fieldDes))
-		for x := range columns {
-			item[x] = &columns[x]
-		}
-
-		if err := rows.Scan(item...); err != nil {
-			return nil, err
-		}
-
-		res := make(map[string]interface{}, len(p.data))
-		for i, col := range columns {
-			res[fieldDes[i]] = utility.ParseAny(col)
+			val, err := utility.ParseAny(col, p.strutType.Elem().Field(i).Type)
+			if err != nil {
+				return nil, err
+			}
+			res[fieldDes[i]] = val
 		}
 		items = append(items, res)
 	}
