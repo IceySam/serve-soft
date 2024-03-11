@@ -158,18 +158,20 @@ func TypeEquals(data any, compare any) bool {
 	return reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare))
 }
 
-func ParseAny(byt sql.RawBytes) any {
+func ParseAny(byt sql.RawBytes, ty reflect.Type) (any, error) {
 	str := string(byt)
-
-	if val, err := strconv.ParseInt(str, 10, 64); err == nil {
-		return val
-	} else if val, err := strconv.ParseFloat(str, 64); err == nil {
-		return val
-	} else if val, err := strconv.ParseBool(str); err == nil {
-		return val
+	if ty.AssignableTo(reflect.TypeOf(1)) {
+		val, err := strconv.ParseInt(str, 10, 64)
+		return val, err
+	} else if ty.AssignableTo(reflect.TypeOf(0.03)) {
+		val, err := strconv.ParseFloat(str, 64)
+		return val, err
+	} else if ty.AssignableTo(reflect.TypeOf(true)) {
+		val, err := strconv.ParseBool(str)
+		return val, err
 	} else if byt == nil {
-		return "NULL"
+		return "NULL", nil
 	} else {
-		return str
+		return str, nil
 	}
 }

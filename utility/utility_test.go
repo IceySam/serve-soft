@@ -72,14 +72,14 @@ func TestToMap(t *testing.T) {
 			name:     "simple struct",
 			input:    Animal{Id: 1, Niche: "Forest", Color: "gray", Age: 2},
 			wantType: reflect.TypeOf(Animal{}),
-			wantName: "Animal",
+			wantName: "animal",
 			wantErr:  false,
 		},
 		{
 			name:     "invalid struct (non-JSON-serializable)",
 			input:    Case{flat: 8},
 			wantType: reflect.TypeOf(Case{}),
-			wantName: "Case",
+			wantName: "case",
 			wantErr:  true,
 		},
 	}
@@ -257,42 +257,56 @@ func TestParseAny(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   sql.RawBytes
+		ty      reflect.Type
 		want    any
 		wantErr bool
 	}{
 		{
 			name:    "valid int",
 			input:   []byte("123"),
+			ty:      reflect.TypeOf(123),
 			want:    int64(123),
 			wantErr: false,
 		},
 		{
 			name:    "valid float",
 			input:   []byte("3.14"),
+			ty:      reflect.TypeOf(3.14),
 			want:    float64(3.14),
 			wantErr: false,
 		},
 		{
 			name:    "valid bool (lowercase)",
 			input:   []byte("true"),
+			ty:      reflect.TypeOf(true),
 			want:    true,
 			wantErr: false,
 		},
 		{
 			name:    "valid bool (uppercase)",
 			input:   []byte("TRUE"),
+			ty:      reflect.TypeOf(true),
 			want:    true,
 			wantErr: false,
 		},
 		{
+			name:    "valid bool int",
+			input:   []byte("20"),
+			ty:      reflect.TypeOf(false),
+			want:    false,
+			wantErr: true,
+		},
+		{
 			name:    "nil byte slice",
 			input:   nil,
+			ty:      reflect.TypeOf("NULL"),
 			want:    "NULL",
 			wantErr: false,
 		},
 		{
 			name:    "empty string",
 			input:   []byte(""),
+			ty:      reflect.TypeOf(""),
 			want:    "",
 			wantErr: false,
 		},
@@ -300,7 +314,12 @@ func TestParseAny(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := utility.ParseAny(tt.input)
+			got, err := utility.ParseAny(tt.input, tt.ty)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseAny() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseAny() got = %v, want %v", got, tt.want)
 			}
