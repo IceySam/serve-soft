@@ -72,7 +72,7 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 		conv[strings.ToLower(k)] = v
 	}
 
-	for x := 0; x < len(m); x++ {
+	for x := 0; x < ty.NumField(); x++ {
 		structField := ty.Field(x)
 		structValue := vy.Field(x)
 
@@ -83,7 +83,7 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 		}
 
 		if !reflect.TypeOf(value).AssignableTo(structField.Type) {
-			return fmt.Errorf("%s %v is not assignable to type %v", structField.Name, reflect.TypeOf(value), structField.Type)
+			return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
 		}
 
 		if value != "" {
@@ -97,11 +97,6 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 func ToStructArray(m []map[string]interface{}, i interface{}) error {
 	sliceType := reflect.TypeOf(i).Elem()
 	sliceValue := reflect.ValueOf(i).Elem()
-	
-	// empty map
-	if len(m) == 0 {
-		return fmt.Errorf("map is empty")
-	}
 
 	// check slice
 	if sliceType.Kind() != reflect.Slice {
@@ -128,7 +123,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 
 	// verify and set fields
 	for x := 0; x < len(m); x++ {
-		for y := 0; y < len(m[x]); y++ {
+		for y := 0; y < ty.NumField(); y++ {
 			structField := ty.Field(y)
 			structValue := vy.Index(x).Field(y)
 
@@ -138,7 +133,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 				return fmt.Errorf("field %s unavailable", structField.Name)
 			}
 			if x == 0 && !reflect.TypeOf(value).AssignableTo(structField.Type) {
-				return fmt.Errorf("%s %v is not assignable to type %v", structField.Name, reflect.TypeOf(value), structField.Type)
+				return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
 			}
 
 			if value != "" {
