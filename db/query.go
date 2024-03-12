@@ -528,11 +528,7 @@ func (p *partialQuery) fetchData(stmt string, args ...interface{}) ([]map[string
 
 		res := make(map[string]interface{}, len(p.data))
 		for i, col := range columns {
-			val, err := utility.ParseAny(col, p.strutType.Elem().Field(i).Type)
-			if err != nil {
-				return nil, err
-			}
-			res[fieldDes[i]] = val
+			res[fieldDes[i]] = utility.ParseAny(col)
 		}
 		items = append(items, res)
 	}

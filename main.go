@@ -9,10 +9,10 @@ import (
 )
 
 type car struct {
-	Id    int
+	Id    int64
 	Brand string
 	Model string
-	Year  int
+	Year  int64
 }
 
 func main() {
@@ -63,15 +63,15 @@ func main() {
 	// err := q.Delete(&car{}).Where(map[string]any{"brand": "Toyota"}).Apply()
 	// cars, err := q.FindAll(&car{})
 	// cars, err := q.FindAllCtx(context.Background(), &car{})
-	c := car{}
-	err = q.Find(&car{}).One(&c)
+	// c := car{}
+	// err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
-	// cars := make([]car, 0)
-	// // err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
+	cars := make([]car, 0)
+	err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
 	// err = q.Find(&car{}).Where(map[string]interface{}{"year": 2020}).ManyCtx(context.Background(), &cars)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(c)
+	fmt.Println(cars)
 	// fmt.Println(lastId)
 }

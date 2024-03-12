@@ -61,69 +61,93 @@ func ToMap(s interface{}) (map[string]interface{}, reflect.Type, string, error) 
 }
 
 func ToStruct(m map[string]interface{}, i interface{}) error {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, i)
-	if err != nil {
-		return err
-	}
-
 	ty := reflect.TypeOf(i).Elem()
+	vy := reflect.ValueOf(i).Elem()
 	if ty.Kind() != reflect.Struct {
 		return fmt.Errorf("requires struct found, %s", ty.Kind())
 	}
-	conv := make(map[string]interface{}, len(m))
+
+	conv := make(map[string]interface{})
 	for k, v := range m {
 		conv[strings.ToLower(k)] = v
 	}
-	for i := 0; i < ty.NumField(); i++ {
-		key := conv[strings.ToLower(ty.Field(i).Name)]
-		if key == nil {
-			err = fmt.Errorf("field %s unavailable", ty.Field(i).Name)
-			break
+
+	for x := 0; x < len(m); x++ {
+		structField := ty.Field(x)
+		structValue := vy.Field(x)
+
+		value := conv[strings.ToLower(structField.Name)]
+
+		if value == nil {
+			return fmt.Errorf("field %s unavailable", structField.Name)
 		}
-	}
-	if err != nil {
-		return err
+
+		if !reflect.TypeOf(value).AssignableTo(structField.Type) {
+			return fmt.Errorf("%s %v is not assignable to type %v", structField.Name, reflect.TypeOf(value), structField.Type)
+		}
+
+		if value != "" {
+			structValue.Set(reflect.ValueOf(value))
+		}
 	}
 
 	return nil
 }
 
 func ToStructArray(m []map[string]interface{}, i interface{}) error {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, i)
-	if err != nil {
-		return err
-	}
-
-	ty := reflect.TypeOf(i).Elem()
-	if ty.Kind() != reflect.Slice || ty.Elem().Kind() != reflect.Struct {
-		return err
+	sliceType := reflect.TypeOf(i).Elem()
+	sliceValue := reflect.ValueOf(i).Elem()
+	
+	// empty map
+	if len(m) == 0 {
+		return fmt.Errorf("map is empty")
 	}
 
-	if len(m) > 0 {
-		conv := make(map[string]interface{}, len(m[0]))
-		for k, v := range m[0] {
-			conv[strings.ToLower(k)] = v
+	// check slice
+	if sliceType.Kind() != reflect.Slice {
+		return fmt.Errorf("requires struct found, %s", sliceType.Kind())
+	}
+
+	ty := sliceType.Elem()
+	// check struct
+	if ty.Kind() != reflect.Struct {
+		return fmt.Errorf("requires struct found, %s", ty.Kind())
+	}
+
+	// new slice
+	vy := reflect.MakeSlice(sliceType, len(m), len(m))
+
+	conv := make([]map[string]interface{}, 0)
+	for _, m := range m {
+		item := make(map[string]interface{})
+		for k, v := range m {
+			item[strings.ToLower(k)] = v
 		}
+		conv = append(conv, item)
+	}
 
-		for i := 0; i < ty.Elem().NumField(); i++ {
-			val := conv[strings.ToLower(ty.Elem().Field(i).Name)]
-			if val == nil {
-				err = fmt.Errorf("field %s unavailable", ty.Elem().Field(i).Name)
-				break
+	// verify and set fields
+	for x := 0; x < len(m); x++ {
+		for y := 0; y < len(m[x]); y++ {
+			structField := ty.Field(y)
+			structValue := vy.Index(x).Field(y)
+
+			value := conv[x][strings.ToLower(structField.Name)]
+
+			if x == 0 && value == nil {
+				return fmt.Errorf("field %s unavailable", structField.Name)
+			}
+			if x == 0 && !reflect.TypeOf(value).AssignableTo(structField.Type) {
+				return fmt.Errorf("%s %v is not assignable to type %v", structField.Name, reflect.TypeOf(value), structField.Type)
+			}
+
+			if value != "" {
+				structValue.Set(reflect.ValueOf(value))
 			}
 		}
-		if err != nil {
-			return err
-		}
 	}
+
+	sliceValue.Set(vy)
 
 	return nil
 }
@@ -158,20 +182,18 @@ func TypeEquals(data any, compare any) bool {
 	return reflect.TypeOf(data).AssignableTo(reflect.TypeOf(compare))
 }
 
-func ParseAny(byt sql.RawBytes, ty reflect.Type) (any, error) {
+func ParseAny(byt sql.RawBytes) any {
 	str := string(byt)
-	if ty.AssignableTo(reflect.TypeOf(1)) {
-		val, err := strconv.ParseInt(str, 10, 64)
-		return val, err
-	} else if ty.AssignableTo(reflect.TypeOf(0.03)) {
-		val, err := strconv.ParseFloat(str, 64)
-		return val, err
-	} else if ty.AssignableTo(reflect.TypeOf(true)) {
-		val, err := strconv.ParseBool(str)
-		return val, err
+
+	if val, err := strconv.ParseInt(str, 10, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseFloat(str, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseBool(str); err == nil {
+		return val
 	} else if byt == nil {
-		return "NULL", nil
+		return "NULL"
 	} else {
-		return str, nil
+		return str
 	}
 }
