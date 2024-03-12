@@ -141,7 +141,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 			if x == 0 && value == nil {
 				return fmt.Errorf("field %s unavailable", structField.Name)
 			}
-			
+
 			var res any
 			if structField.Type.Kind() == reflect.Bool {
 				b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
@@ -204,7 +204,7 @@ func ParseAny(byt sql.RawBytes) any {
 	} else if val, err := strconv.ParseBool(str); err == nil {
 		return val
 	} else if byt == nil {
-		return "NULL"
+		return nil
 	} else {
 		return str
 	}
