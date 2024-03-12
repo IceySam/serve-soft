@@ -67,7 +67,7 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 		return fmt.Errorf("requires struct found, %s", ty.Kind())
 	}
 
-	conv := make(map[string]interface{})
+	conv := make(map[string]interface{}, len(m))
 	for k, v := range m {
 		conv[strings.ToLower(k)] = v
 	}
@@ -119,7 +119,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 
 	conv := make([]map[string]interface{}, 0)
 	for _, m := range m {
-		item := make(map[string]interface{})
+		item := make(map[string]interface{}, len(m))
 		for k, v := range m {
 			item[strings.ToLower(k)] = v
 		}
