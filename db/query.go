@@ -346,6 +346,9 @@ func (p *partialQuery) One(i interface{}) error {
 		return err
 	}
 
+	if len(items) == 0 {
+		return fmt.Errorf("query did not return any result")
+	}
 	err = utility.ToStruct(items[0], i)
 	if err != nil {
 		return err
