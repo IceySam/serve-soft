@@ -64,10 +64,10 @@ func main() {
 	// cars, err := q.FindAll(&car{})
 	// cars, err := q.FindAllCtx(context.Background(), &car{})
 	// c := car{}
-	// err = q.Find(&car{}).Where(map[string]interface{}{"year": 2030}).One(&c)
+	// err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
 	cars := make([]car, 0)
-	err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2030}, {"year": 2033}}).Many(&cars)
+	err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
 	// err = q.Find(&car{}).Where(map[string]interface{}{"year": 2020}).ManyCtx(context.Background(), &cars)
 	if err != nil {
 		log.Fatal(err)
