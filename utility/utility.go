@@ -84,22 +84,19 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 			return fmt.Errorf("field %s unavailable", structField.Name)
 		}
 
-		var res reflect.Value
-		if structField.Type.Kind() == reflect.Bool {
-			b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
-			if err != nil {
-				return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
-			}
-			res = reflect.ValueOf(b)
-
-		} else {
-			if !reflect.TypeOf(value).AssignableTo(structField.Type) {
-				return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
-			}
-			res = reflect.ValueOf(value)
-		}
 		if value != nil {
-			structValue.Set(res)
+			if structField.Type.Kind() == reflect.Bool {
+				b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
+				if err != nil {
+					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+				}
+				structValue.Set(reflect.ValueOf(b))
+			} else {
+				if !reflect.TypeOf(value).AssignableTo(structField.Type) {
+					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+				}
+				structValue.Set(reflect.ValueOf(value))
+			}
 		}
 	}
 
@@ -148,22 +145,19 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 			if x == 0 && mapKeys[x][strings.ToLower(structField.Name)] == nil {
 				return fmt.Errorf("field %s unavailable", structField.Name)
 			}
-
-			var res any
-			if structField.Type.Kind() == reflect.Bool {
-				b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
-				if err != nil {
-					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
-				}
-				res = b
-			} else {
-				if x == 0 && !reflect.TypeOf(value).AssignableTo(structField.Type) {
-					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
-				}
-				res = value
-			}
 			if value != nil {
-				structValue.Set(reflect.ValueOf(res))
+				if structField.Type.Kind() == reflect.Bool {
+					b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
+					if err != nil {
+						return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+					}
+					structValue.Set(reflect.ValueOf(b))
+				} else {
+					if x == 0 && !reflect.TypeOf(value).AssignableTo(structField.Type) {
+						return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+					}
+					structValue.Set(reflect.ValueOf(value))
+				}
 			}
 		}
 	}
