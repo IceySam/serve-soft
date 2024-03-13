@@ -68,8 +68,10 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 	}
 
 	conv := make(map[string]interface{}, len(m))
+	mapKeys := make(map[string]interface{}, len(m))
 	for k, v := range m {
 		conv[strings.ToLower(k)] = v
+		mapKeys[strings.ToLower(k)] = k
 	}
 
 	for x := 0; x < ty.NumField(); x++ {
@@ -78,7 +80,7 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 
 		value := conv[strings.ToLower(structField.Name)]
 
-		if value == nil {
+		if mapKeys[strings.ToLower(structField.Name)] == nil {
 			return fmt.Errorf("field %s unavailable", structField.Name)
 		}
 
@@ -91,13 +93,14 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 			res = reflect.ValueOf(b)
 
 		} else {
-			if reflect.TypeOf(value) != structField.Type {
+			if !reflect.TypeOf(value).AssignableTo(structField.Type) {
 				return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
 			}
 			res = reflect.ValueOf(value)
 		}
-		structValue.Set(res)
-
+		if value != nil {
+			structValue.Set(res)
+		}
 	}
 
 	return nil
@@ -122,12 +125,16 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 	vy := reflect.MakeSlice(sliceType, len(m), len(m))
 
 	conv := make([]map[string]interface{}, 0)
+	mapKeys := make([]map[string]interface{}, 0)
 	for _, m := range m {
 		item := make(map[string]interface{}, len(m))
+		keyItem := make(map[string]interface{}, len(m))
 		for k, v := range m {
 			item[strings.ToLower(k)] = v
+			keyItem[strings.ToLower(k)] = k
 		}
 		conv = append(conv, item)
+		mapKeys = append(mapKeys, keyItem)
 	}
 
 	// verify and set fields
@@ -138,7 +145,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 
 			value := conv[x][strings.ToLower(structField.Name)]
 
-			if x == 0 && value == nil {
+			if x == 0 && mapKeys[x][strings.ToLower(structField.Name)] == nil {
 				return fmt.Errorf("field %s unavailable", structField.Name)
 			}
 
@@ -155,7 +162,9 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 				}
 				res = value
 			}
-			structValue.Set(reflect.ValueOf(res))
+			if value != nil {
+				structValue.Set(reflect.ValueOf(res))
+			}
 		}
 	}
 
@@ -204,7 +213,7 @@ func ParseAny(byt sql.RawBytes) any {
 	} else if val, err := strconv.ParseBool(str); err == nil {
 		return val
 	} else if byt == nil {
-		return "nil"
+		return nil
 	} else {
 		return str
 	}
