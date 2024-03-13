@@ -161,9 +161,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 			}
 		}
 	}
-
 	sliceValue.Set(vy)
-
 	return nil
 }
 
