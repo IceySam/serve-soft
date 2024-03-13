@@ -293,7 +293,7 @@ func TestParseAny(t *testing.T) {
 		{
 			name:    "nil byte slice",
 			input:   nil,
-			want:    "NULL",
+			want:    "nil",
 			wantErr: false,
 		},
 		{

@@ -204,7 +204,7 @@ func ParseAny(byt sql.RawBytes) any {
 	} else if val, err := strconv.ParseBool(str); err == nil {
 		return val
 	} else if byt == nil {
-		return nil
+		return "nil"
 	} else {
 		return str
 	}
