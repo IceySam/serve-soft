@@ -143,15 +143,17 @@ func (q Query) Insert(i interface{}) (int64, error) {
 	x := 1
 	for k, v := range m {
 		k = fmt.Sprintf("`%s`", k)
-		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-			v = fmt.Sprintf("'%v'", v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s%s)", keys, k)
-			values = fmt.Sprintf("%s%v);", values, v)
-		} else {
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
+		if v != nil {
+			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
+				v = fmt.Sprintf("'%v'", v)
+			}
+			if x == len(m) {
+				keys = fmt.Sprintf("%s%s)", keys, k)
+				values = fmt.Sprintf("%s%v);", values, v)
+			} else {
+				keys = fmt.Sprintf("%s%s,", keys, k)
+				values = fmt.Sprintf("%s%v,", values, v)
+			}
 		}
 		x++
 	}
@@ -180,15 +182,17 @@ func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
 	x := 1
 	for k, v := range m {
 		k = fmt.Sprintf("`%s`", k)
-		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-			v = fmt.Sprintf("'%v'", v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s%s)", keys, k)
-			values = fmt.Sprintf("%s%v);", values, v)
-		} else {
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
+		if v != nil {
+			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
+				v = fmt.Sprintf("'%v'", v)
+			}
+			if x == len(m) {
+				keys = fmt.Sprintf("%s%s)", keys, k)
+				values = fmt.Sprintf("%s%v);", values, v)
+			} else {
+				keys = fmt.Sprintf("%s%s,", keys, k)
+				values = fmt.Sprintf("%s%v,", values, v)
+			}
 		}
 		x++
 	}
@@ -216,15 +220,17 @@ func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int6
 	x := 1
 	for k, v := range m {
 		k = fmt.Sprintf("`%s`", k)
-		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-			v = fmt.Sprintf("'%v'", v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s%s)", keys, k)
-			values = fmt.Sprintf("%s%v);", values, v)
-		} else {
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
+		if v != nil {
+			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
+				v = fmt.Sprintf("'%v'", v)
+			}
+			if x == len(m) {
+				keys = fmt.Sprintf("%s%s)", keys, k)
+				values = fmt.Sprintf("%s%v);", values, v)
+			} else {
+				keys = fmt.Sprintf("%s%s,", keys, k)
+				values = fmt.Sprintf("%s%v,", values, v)
+			}
 		}
 		x++
 	}

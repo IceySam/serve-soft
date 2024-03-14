@@ -210,3 +210,21 @@ func ParseAny(byt sql.RawBytes) any {
 		return str
 	}
 }
+
+func NilErrors(v [][]error) error {
+	var err error
+	for _, v := range v {
+		if len(v) >= 2 {
+			if v[0] != nil {
+				err = v[1]
+				break
+			}
+		} else if len(v) == 1 {
+			if v[0] != nil {
+				err = v[0]
+				break
+			}
+		}
+	}
+	return err
+}
