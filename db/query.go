@@ -147,18 +147,17 @@ func (q Query) Insert(i interface{}) (int64, error) {
 			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 				v = fmt.Sprintf("'%v'", v)
 			}
-			if x == len(m) {
-				keys = fmt.Sprintf("%s%s)", keys, k)
-				values = fmt.Sprintf("%s%v);", values, v)
-			} else {
-				keys = fmt.Sprintf("%s%s,", keys, k)
-				values = fmt.Sprintf("%s%v,", values, v)
-			}
+			keys = fmt.Sprintf("%s%s,", keys, k)
+			values = fmt.Sprintf("%s%v,", values, v)
+		}
+		if x == len(m) {
+			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
+			values = fmt.Sprintf("%s);", values[:len(values)-1])
 		}
 		x++
 	}
 	stmt := fmt.Sprintf("%s%s", keys, values)
-
+	fmt.Println(stmt)
 	res, err := q.Conn.Exec(stmt)
 	if err != nil {
 		return 0, err
@@ -186,13 +185,12 @@ func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
 			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 				v = fmt.Sprintf("'%v'", v)
 			}
-			if x == len(m) {
-				keys = fmt.Sprintf("%s%s)", keys, k)
-				values = fmt.Sprintf("%s%v);", values, v)
-			} else {
-				keys = fmt.Sprintf("%s%s,", keys, k)
-				values = fmt.Sprintf("%s%v,", values, v)
-			}
+			keys = fmt.Sprintf("%s%s,", keys, k)
+			values = fmt.Sprintf("%s%v,", values, v)
+		}
+		if x == len(m) {
+			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
+			values = fmt.Sprintf("%s);", values[:len(values)-1])
 		}
 		x++
 	}
@@ -224,13 +222,12 @@ func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int6
 			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
 				v = fmt.Sprintf("'%v'", v)
 			}
-			if x == len(m) {
-				keys = fmt.Sprintf("%s%s)", keys, k)
-				values = fmt.Sprintf("%s%v);", values, v)
-			} else {
-				keys = fmt.Sprintf("%s%s,", keys, k)
-				values = fmt.Sprintf("%s%v,", values, v)
-			}
+			keys = fmt.Sprintf("%s%s,", keys, k)
+			values = fmt.Sprintf("%s%v,", values, v)
+		}
+		if x == len(m) {
+			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
+			values = fmt.Sprintf("%s);", values[:len(values)-1])
 		}
 		x++
 	}
