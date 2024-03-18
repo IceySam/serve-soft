@@ -109,7 +109,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 
 	// check slice
 	if sliceType.Kind() != reflect.Slice {
-		return fmt.Errorf("requires struct found, %s", sliceType.Kind())
+		return fmt.Errorf("requires slice found, %s", sliceType.Kind())
 	}
 
 	ty := sliceType.Elem()

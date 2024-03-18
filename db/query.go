@@ -134,30 +134,10 @@ func (q Query) TxCreateCtx(ctx context.Context, tx *sql.Tx, name string, definit
 
 // insert into table
 func (q Query) Insert(i interface{}) (int64, error) {
-	m, _, name, err := utility.ToMap(i)
+	stmt, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
 	}
-	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
-	values := " VALUES ("
-	x := 1
-	for k, v := range m {
-		k = fmt.Sprintf("`%s`", k)
-		if v != nil {
-			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-				v = fmt.Sprintf("'%v'", v)
-			}
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
-			values = fmt.Sprintf("%s);", values[:len(values)-1])
-		}
-		x++
-	}
-	stmt := fmt.Sprintf("%s%s", keys, values)
-	fmt.Println(stmt)
 	res, err := q.Conn.Exec(stmt)
 	if err != nil {
 		return 0, err
@@ -172,30 +152,10 @@ func (q Query) Insert(i interface{}) (int64, error) {
 
 // insert into table with context
 func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
-	m, _, name, err := utility.ToMap(i)
+	stmt, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
 	}
-	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
-	values := " VALUES ("
-	x := 1
-	for k, v := range m {
-		k = fmt.Sprintf("`%s`", k)
-		if v != nil {
-			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-				v = fmt.Sprintf("'%v'", v)
-			}
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
-			values = fmt.Sprintf("%s);", values[:len(values)-1])
-		}
-		x++
-	}
-	stmt := fmt.Sprintf("%s%s", keys, values)
-
 	res, err := q.Conn.ExecContext(ctx, stmt)
 	if err != nil {
 		return 0, err
@@ -209,9 +169,25 @@ func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
 
 // TX insert into table with context
 func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int64, error) {
-	m, _, name, err := utility.ToMap(i)
+	stmt, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
+	}
+	res, err := tx.ExecContext(ctx, stmt)
+	if err != nil {
+		return 0, err
+	}
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return lastId, nil
+}
+
+func prepareInsert(i interface{}) (string, error) {
+	m, _, name, err := utility.ToMap(i)
+	if err != nil {
+		return "", err
 	}
 	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
 	values := " VALUES ("
@@ -233,15 +209,7 @@ func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int6
 	}
 	stmt := fmt.Sprintf("%s%s", keys, values)
 
-	res, err := tx.ExecContext(ctx, stmt)
-	if err != nil {
-		return 0, err
-	}
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return lastId, nil
+	return stmt, nil
 }
 
 // set update data, implements Completer.
