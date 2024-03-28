@@ -11,14 +11,14 @@ import (
 )
 
 type Animal struct {
-	Id    int
+	Id    int64
 	Niche string
 	Color string
-	Age   int
+	Age   int64
 }
 
 type Case struct {
-	flat int
+	flat int64
 }
 
 func TestValidate(t *testing.T) {
@@ -122,7 +122,7 @@ func TestToStruct(t *testing.T) {
 		},
 		{
 			name:     "wrong map field",
-			inputMap: map[string]interface{}{"Id": 1, "Niche": 34, "Color": "gray", "Age": 2},
+			inputMap: map[string]interface{}{"Id": 1, "Niche": 34, "Color": "gray", "Aged": 2},
 			outPtr:   &Animal{},
 			wantErr:  true,
 		},
@@ -168,7 +168,7 @@ func TestToStructArray(t *testing.T) {
 		},
 		{
 			name:          "wrong map field",
-			inputMapSlice: []map[string]interface{}{{"Id": 1, "Niche": 34, "Color": "gray", "Age": 2}},
+			inputMapSlice: []map[string]interface{}{{"Id": 1, "Niche": 34, "Color": "gray", "Aged": 2}},
 			outPtr:        &[]Animal{},
 			wantErr:       true,
 		},
@@ -313,4 +313,43 @@ func TestParseAny(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseAnyStr(t *testing.T) {
+    type testCase struct {
+        input string
+        expected any
+    }
+
+    testCases := []testCase{
+        // Integer parsing
+        {"123", int64(123)},
+        {"-456", int64(-456)},
+        {"0", int64(0)},
+        {"  100  ", int64(100)},
+
+        // Float parsing
+        {"3.14159", float64(3.14159)},
+        {"-2.5e-3", float64(-0.0025)},
+        {"1.2345000", float64(1.2345)},
+
+        // Boolean parsing
+        {"true", true},
+        {"false", false},
+        {"TRUE", true},
+        {"  FALSE  ", false},
+
+        // Returning original string
+        {"hello", "hello"},
+        {"12.3abc", "12.3abc"},
+        {"true123", "true123"},
+        {"", ""},
+    }
+
+    for _, tc := range testCases {
+        result := utility.ParseAnyStr(tc.input)
+        if result != tc.expected {
+            t.Errorf("ParseAnyStr(%q) = %v, expected %v", tc.input, result, tc.expected)
+        }
+    }
 }
