@@ -10,7 +10,7 @@ import (
 )
 
 /*
- Validate request data
+Validate request data
 */
 func Validate(s interface{}) error {
 	var errs error
@@ -34,7 +34,7 @@ func Validate(s interface{}) error {
 }
 
 /*
- Convert struct to map
+Convert struct to map
 */
 func ToMap(s interface{}) (map[string]interface{}, reflect.Type, string, error) {
 	ty := reflect.TypeOf(s)
@@ -85,17 +85,20 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 		}
 
 		if value != nil {
-			if structField.Type.Kind() == reflect.Bool {
+			if structField.Type.Kind() == reflect.String {
+				structValue.Set(reflect.ValueOf(fmt.Sprintf("%v",value)))
+			} else if structField.Type.Kind() == reflect.Bool {
 				b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
 				if err != nil {
 					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
 				}
 				structValue.Set(reflect.ValueOf(b))
 			} else {
-				if !reflect.TypeOf(value).AssignableTo(structField.Type) {
-					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+				res := ParseAnyStr(fmt.Sprintf("%v", value))
+				if !reflect.TypeOf(res).AssignableTo(structField.Type) {
+					return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(res), structField.Name, structField.Type)
 				}
-				structValue.Set(reflect.ValueOf(value))
+				structValue.Set(reflect.ValueOf(res))
 			}
 		}
 	}
@@ -146,17 +149,20 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 				return fmt.Errorf("field %s unavailable", structField.Name)
 			}
 			if value != nil {
-				if structField.Type.Kind() == reflect.Bool {
+				if structField.Type.Kind() == reflect.String {
+					structValue.Set(reflect.ValueOf(fmt.Sprintf("%v",value)))
+				} else if structField.Type.Kind() == reflect.Bool {
 					b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
 					if err != nil {
 						return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
 					}
 					structValue.Set(reflect.ValueOf(b))
 				} else {
-					if x == 0 && !reflect.TypeOf(value).AssignableTo(structField.Type) {
-						return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(value), structField.Name, structField.Type)
+					res := ParseAnyStr(fmt.Sprintf("%v", value))
+					if x == 0 && !reflect.TypeOf(res).AssignableTo(structField.Type) {
+						return fmt.Errorf("%v is not assignable to %v %v", reflect.TypeOf(res), structField.Name, structField.Type)
 					}
-					structValue.Set(reflect.ValueOf(value))
+					structValue.Set(reflect.ValueOf(res))
 				}
 			}
 		}
@@ -206,6 +212,19 @@ func ParseAny(byt sql.RawBytes) any {
 		return val
 	} else if byt == nil {
 		return nil
+	} else {
+		return str
+	}
+}
+
+func ParseAnyStr(str string) any {
+	trimmed := strings.Trim(str, " ")
+	if val, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseFloat(trimmed, 64); err == nil {
+		return val
+	} else if val, err := strconv.ParseBool(trimmed); err == nil {
+		return val
 	} else {
 		return str
 	}

@@ -502,7 +502,12 @@ func (p *partialQuery) fetchData(stmt string, args ...interface{}) ([]map[string
 
 		res := make(map[string]interface{}, len(p.data))
 		for i, col := range columns {
-			res[fieldDes[i]] = utility.ParseAny(col)
+			str := string(col)
+			if col == nil {
+				res[fieldDes[i]] = nil
+			} else {
+				res[fieldDes[i]] = str
+			}
 		}
 		items = append(items, res)
 	}
