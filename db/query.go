@@ -336,6 +336,9 @@ func (p *partialQuery) OneCtx(ctx context.Context, i interface{}) error {
 		return err
 	}
 
+	if len(items) == 0 {
+		return fmt.Errorf("query did not return any result")
+	}
 	err = utility.ToStruct(items[0], i)
 	if err != nil {
 		return err
@@ -352,6 +355,9 @@ func (p *partialQuery) TxOneCtx(ctx context.Context, tx *sql.Tx, i interface{}) 
 		return err
 	}
 
+	if len(items) == 0 {
+		return fmt.Errorf("query did not return any result")
+	}
 	err = utility.ToStruct(items[0], i)
 	if err != nil {
 		return err
