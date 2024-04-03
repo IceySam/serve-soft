@@ -30,7 +30,7 @@ func auth(handler http.Handler) http.Handler {
 		token := strings.TrimSpace(r.Header.Get("token"))
 
 		if token == "" {
-			res.RepondUnauthorized(w, r)
+			res.RespondUnauthorized(w, r)
 			return
 		}
 		c := &Claim{}
@@ -39,12 +39,12 @@ func auth(handler http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			res.RepondUnauthorized(w, r)
+			res.RespondUnauthorized(w, r)
 			return
 		}
 
 		if !parseClaim.Valid {
-			res.RepondForbidden(w, r)
+			res.RespondForbidden(w, r)
 			return
 		}
 		handler.ServeHTTP(w, r)

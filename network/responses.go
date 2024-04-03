@@ -34,7 +34,7 @@ func res(w http.ResponseWriter, _ *http.Request, statusCode int, message string,
 }
 
 /**
-sucessful
+successful
 */
 
 // get request
@@ -71,7 +71,7 @@ func (Responses) RespondDeleted(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
-end sucessful
+end successful
 */
 
 /**
@@ -79,7 +79,7 @@ failed
 */
 
 // bad request
-func (Responses) RepondBadRequest(w http.ResponseWriter, r *http.Request, message...string) {
+func (Responses) RespondBadRequest(w http.ResponseWriter, r *http.Request, message...string) {
 	msg := "bad request"
 	if len(message) > 0 {
 		msg = message[0]
@@ -88,12 +88,12 @@ func (Responses) RepondBadRequest(w http.ResponseWriter, r *http.Request, messag
 }
 
 // unauthorized request
-func (Responses) RepondUnauthorized(w http.ResponseWriter, r *http.Request) {
+func (Responses) RespondUnauthorized(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusUnauthorized, "unauthorized", nil)
 }
 
 // forbidden
-func (Responses) RepondForbidden(w http.ResponseWriter, r *http.Request) {
+func (Responses) RespondForbidden(w http.ResponseWriter, r *http.Request) {
 	res(w, r, http.StatusForbidden, "Forbidden", nil)
 }
 
