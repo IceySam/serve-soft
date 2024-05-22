@@ -114,12 +114,12 @@ func Setup(h *network.NetHandler) {
 	resp = network.Responses{}
 
 	// auth middleware
-	auth := h.Middlewares["auth"]
+	// auth := h.Middlewares["auth"]
 
 	h.Mux.HandleFunc("/auth/login", login) // should be in auth package
 	h.Mux.HandleFunc("/foods/add", add)
 	h.Mux.HandleFunc("/foods/update/", update)
-	h.Mux.Handle("/foods", auth(http.HandlerFunc(getAll)))
+	h.Mux.HandleFunc("/foods", network.ChainedMiddleware(getAll, h.Middlewares))
 	h.Mux.HandleFunc("/foods/", getOne)
 
 }
