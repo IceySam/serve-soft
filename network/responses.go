@@ -93,8 +93,8 @@ func (Responses) RespondUnauthorized(w http.ResponseWriter, r *http.Request) {
 }
 
 // forbidden
-func (Responses) RespondForbidden(w http.ResponseWriter, r *http.Request) {
-	res(w, r, http.StatusForbidden, "Forbidden", nil)
+func (Responses) RespondForbidden(w http.ResponseWriter, r *http.Request, data ...any) {
+	res(w, r, http.StatusForbidden, "Forbidden", data)
 }
 
 /**
