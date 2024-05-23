@@ -11,6 +11,40 @@ import (
 
 type GeneralMiddleWare func(handler http.Handler) http.HandlerFunc
 
+func whitelist(handler http.Handler) http.HandlerFunc  {
+	ENV, err := godotenv.Read(".env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request)  {
+		res := Responses{}
+		forwardedIP := r.Header.Get("X-Forwarded-For")
+		clientIP := ""
+		if forwardedIP != "" {
+			clientIP = forwardedIP
+			parts := strings.Split(forwardedIP, ",")
+			clientIP = parts[0]
+		} else {
+			clientIP = r.RemoteAddr
+		}
+		pass := false
+		ips := strings.Split(ENV["IP_WHITELIST"], ",")
+		for _, v := range ips {
+			if strings.Contains(clientIP, v) {
+				pass = true
+				break
+			}
+		}
+
+		if !pass {
+			res.RespondForbidden(w, r, "IP NOT ALLOWED")
+			return
+		}
+
+		handler.ServeHTTP(w, r)
+	})
+}
+
 func general(handler http.Handler) http.HandlerFunc {
 	ENV, err := godotenv.Read(".env")
 	if err != nil {
