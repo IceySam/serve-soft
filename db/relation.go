@@ -3,8 +3,10 @@ package db
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"database/sql"
+
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 )
@@ -14,17 +16,23 @@ type sqlStr struct {
 	conStr string
 }
 
-func (s *sqlStr) makeConnection() (*sql.DB, error) {
+func (s *sqlStr) makeConnection(maxCon int, maxLifeMin int) (*sql.DB, error) {
 	connection, err := sql.Open(s.driver, s.conStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		return nil, err
 	}
+	connection.SetMaxOpenConns(maxCon)
+	connection.SetMaxIdleConns(maxCon)
+	connection.SetConnMaxLifetime(time.Duration(maxLifeMin) * time.Minute)
 
 	return connection, nil
 }
 
-func New(driverName string, conStr string) (*sql.DB, error) {
-	c := &sqlStr{ conStr: conStr, driver: driverName }
-	return c.makeConnection()
+/*
+* e.g conn, err := db.New("postgres", "postgres://postgres:password@localhost:port_no/db_name", 25, 10)
+*/ 
+func New(driverName string, conStr string, maxCon int, maxLifeMin int) (*sql.DB, error) {
+	c := &sqlStr{conStr: conStr, driver: driverName}
+	return c.makeConnection(maxCon, maxLifeMin)
 }
