@@ -35,7 +35,7 @@ func main() {
 	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"], ENV["DB_PASSWORD"], ENV["DB_HOST"], ENV["DB_PORT"], ENV["DB_NAME"])
 
 	// conn, err := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
-	conn, err := db.New("mysql", mysqlConStr, 10, 5)
+	conn, err := db.New("mysql", mysqlConStr)
 	if err != nil {
 		log.Fatal(err)
 	}
