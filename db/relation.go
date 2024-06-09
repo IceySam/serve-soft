@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"database/sql"
 
@@ -16,23 +15,19 @@ type sqlStr struct {
 	conStr string
 }
 
-func (s *sqlStr) makeConnection(maxCon int, maxLifeMin int) (*sql.DB, error) {
+func (s *sqlStr) makeConnection() (*sql.DB, error) {
 	connection, err := sql.Open(s.driver, s.conStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		return nil, err
 	}
-	connection.SetMaxOpenConns(maxCon)
-	connection.SetMaxIdleConns(maxCon)
-	connection.SetConnMaxLifetime(time.Duration(maxLifeMin) * time.Minute)
-
 	return connection, nil
 }
 
 /*
-* e.g conn, err := db.New("postgres", "postgres://postgres:password@localhost:port_no/db_name", 25, 10)
+* e.g conn, err := db.New("postgres", "postgres://postgres:password@localhost:port_no/db_name")
 */ 
-func New(driverName string, conStr string, maxCon int, maxLifeMin int) (*sql.DB, error) {
+func New(driverName string, conStr string) (*sql.DB, error) {
 	c := &sqlStr{conStr: conStr, driver: driverName}
-	return c.makeConnection(maxCon, maxLifeMin)
+	return c.makeConnection()
 }
