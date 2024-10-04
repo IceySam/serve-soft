@@ -45,7 +45,7 @@ func main() {
 	q := db.Query{Conn: conn}
 	// err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
 	// lastId, err := q.Insert(&container{Reference: "general78"})
-	lastId, err := q.Insert(&car{Brand: "Lambda", Year: 2019})
+	lastId, err := q.Insert(&car{Brand: "Lambda",Model: "Yeti", Year: 2019})
 	// lastId, err := q.InsertCtx(context.Background(), &car{Brand: "Sonata", Model: "brail", Year: 2020})
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 1,
