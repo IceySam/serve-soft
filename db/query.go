@@ -196,9 +196,11 @@ func prepareInsert(i interface{}) (string, []interface{}, error) {
 	values := make([]interface{}, 0, len(m))
 
 	for k, v := range m {
-		keys = append(keys, k)	
-		placeholders = append(placeholders, "?")
-		values = append(values, v)
+		if v != nil {
+			keys = append(keys, k)	
+			placeholders = append(placeholders, "?")
+			values = append(values, v)
+		}
 	}
 
 	stmt := fmt.Sprintf("INSERT INTO `%s` (%s) VALUES (%s)", name, strings.Join(keys, ", "), strings.Join(placeholders, ", "))
