@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 
 	"github.com/IceySam/serve-soft/utility"
 )
@@ -134,11 +135,11 @@ func (q Query) TxCreateCtx(ctx context.Context, tx *sql.Tx, name string, definit
 
 // insert into table
 func (q Query) Insert(i interface{}) (int64, error) {
-	stmt, err := prepareInsert(i)
+	stmt, values, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
 	}
-	res, err := q.Conn.Exec(stmt)
+	res, err := q.Conn.Exec(stmt, values...)
 	if err != nil {
 		return 0, err
 	}
@@ -152,11 +153,11 @@ func (q Query) Insert(i interface{}) (int64, error) {
 
 // insert into table with context
 func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
-	stmt, err := prepareInsert(i)
+	stmt, values, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
 	}
-	res, err := q.Conn.ExecContext(ctx, stmt)
+	res, err := q.Conn.ExecContext(ctx, stmt, values...)
 	if err != nil {
 		return 0, err
 	}
@@ -169,11 +170,11 @@ func (q Query) InsertCtx(ctx context.Context, i interface{}) (int64, error) {
 
 // TX insert into table with context
 func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int64, error) {
-	stmt, err := prepareInsert(i)
+	stmt, values, err := prepareInsert(i)
 	if err != nil {
 		return 0, err
 	}
-	res, err := tx.ExecContext(ctx, stmt)
+	res, err := tx.ExecContext(ctx, stmt, values...)
 	if err != nil {
 		return 0, err
 	}
@@ -184,32 +185,25 @@ func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int6
 	return lastId, nil
 }
 
-func prepareInsert(i interface{}) (string, error) {
+func prepareInsert(i interface{}) (string, []interface{}, error) {
 	m, _, name, err := utility.ToMap(i)
 	if err != nil {
-		return "", err
+		return "", []interface{}{}, err
 	}
-	keys := fmt.Sprintf("INSERT INTO `%s` (", name)
-	values := " VALUES ("
-	x := 1
-	for k, v := range m {
-		k = fmt.Sprintf("`%s`", k)
-		if v != nil {
-			if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf("")) {
-				v = fmt.Sprintf("'%v'", v)
-			}
-			keys = fmt.Sprintf("%s%s,", keys, k)
-			values = fmt.Sprintf("%s%v,", values, v)
-		}
-		if x == len(m) {
-			keys = fmt.Sprintf("%s)", keys[:len(keys)-1])
-			values = fmt.Sprintf("%s);", values[:len(values)-1])
-		}
-		x++
-	}
-	stmt := fmt.Sprintf("%s%s", keys, values)
 
-	return stmt, nil
+	keys := make([]string, 0, len(m))
+	placeholders := make([]string, 0, len(m))
+	values := make([]interface{}, 0, len(m))
+
+	for k, v := range m {
+		keys = append(keys, k)	
+		placeholders = append(placeholders, "?")
+		values = append(values, v)
+	}
+
+	stmt := fmt.Sprintf("INSERT INTO `%s` (%s) VALUES (%s)", name, strings.Join(keys, ", "), strings.Join(placeholders, ", "))
+
+	return stmt, values, nil
 }
 
 // set update data, implements Completer.

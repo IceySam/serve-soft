@@ -24,7 +24,7 @@ type Claim struct {
 func (t *Claim) Valid() error {
 	now := time.Now().Unix()
 	dif := t.ExpiresAt - now
-	fmt.Println(now, t.ExpiresAt, dif)
+	// fmt.Println(now, t.ExpiresAt, dif)
 	if dif < 0 {
 		return fmt.Errorf("expired token")
 	}
