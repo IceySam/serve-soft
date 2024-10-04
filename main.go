@@ -45,7 +45,7 @@ func main() {
 	q := db.Query{Conn: conn}
 	// err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
 	// lastId, err := q.Insert(&container{Reference: "general78"})
-	// lastId, err := q.Insert(&car{Brand: "Lambda", Model: "jewel", Year: 2019})
+	lastId, err := q.Insert(&car{Brand: "Lambda", Year: 2019})
 	// lastId, err := q.InsertCtx(context.Background(), &car{Brand: "Sonata", Model: "brail", Year: 2020})
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 1,
@@ -54,9 +54,9 @@ func main() {
 	// 	"id": 5,
 	// }).ApplyCtx(context.Background())
 	// tx, err := q.Conn.BeginTx(context.Background(), nil)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err != nil {
+		log.Fatal(err)
+	}
 	// defer tx.Rollback()
 	// err = q.Update(&car{}).Set(map[string]interface{}{"brand": "Dune", "model": "lion"}).Where(map[string]any{
 	// 	"id": 5,
@@ -83,5 +83,5 @@ func main() {
 		log.Fatal(err)
 	}
 	// fmt.Println(containers)
-	fmt.Println(cars)
+	fmt.Println(lastId, cars)
 }
