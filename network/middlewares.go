@@ -3,19 +3,26 @@ package network
 import (
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/joho/godotenv"
 )
 
 type GeneralMiddleWare func(handler http.Handler) http.HandlerFunc
 
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
+}
+
 func whitelist(handler http.Handler) http.HandlerFunc  {
-	ENV, err := godotenv.Read(".env")
-	if err != nil {
-		log.Fatal(err)
-	}
 	return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request)  {
 		res := Responses{}
 		forwardedIP := r.Header.Get("X-Forwarded-For")
@@ -28,7 +35,7 @@ func whitelist(handler http.Handler) http.HandlerFunc  {
 			clientIP = r.RemoteAddr
 		}
 		pass := false
-		ips := strings.Split(ENV["IP_WHITELIST"], ",")
+		ips := strings.Split(os.Getenv("IP_WHITELIST"), ",")
 		for _, v := range ips {
 			if strings.Contains(clientIP, v) {
 				pass = true
@@ -45,11 +52,21 @@ func whitelist(handler http.Handler) http.HandlerFunc  {
 	})
 }
 
+func logging(handler http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		log.Printf("[→] %s %s from %s", r.Method, r.RequestURI, r.RemoteAddr)
+		handler.ServeHTTP(lrw, r)
+
+		duration := time.Since(start)
+		log.Printf("[✓] %s %s → %d (%s)", r.Method, r.RequestURI, lrw.statusCode, duration)
+	})
+}
+
 func general(handler http.Handler) http.HandlerFunc {
-	ENV, err := godotenv.Read(".env")
-	if err != nil {
-		log.Fatal(err)
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := Responses{}
 		secretKey := strings.TrimSpace(r.Header.Get("SECRET_KEY"))
@@ -59,7 +76,7 @@ func general(handler http.Handler) http.HandlerFunc {
 			return
 		}
 
-		if secretKey != ENV["SECRET_KEY"] {
+		if secretKey != os.Getenv("SECRET_KEY") {
 			res.RespondForbidden(w, r, "Invalid SECRET_KEY")
 			return
 		}
@@ -69,10 +86,6 @@ func general(handler http.Handler) http.HandlerFunc {
 }
 
 func auth(handler http.Handler) http.HandlerFunc {
-	ENV, err := godotenv.Read(".env")
-	if err != nil {
-		log.Fatal(err)
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := Responses{}
 		bearerToken := strings.Split(r.Header.Get("Authorization"), " ")
@@ -86,7 +99,7 @@ func auth(handler http.Handler) http.HandlerFunc {
 		}
 		c := &Claim{}
 		parseClaim, err := jwt.ParseWithClaims(bearerToken[1], c, func(t *jwt.Token) (interface{}, error) {
-			return []byte(ENV["JWT_SECRET"]), nil
+			return []byte(os.Getenv("JWT_SECRET")), nil
 		})
 
 		if err != nil {

@@ -2,10 +2,10 @@ package network
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/joho/godotenv"
 )
 
 type TokenClaim interface {
@@ -45,17 +45,13 @@ func GenerateClaim(
 	role string,
 	expire_seconds int64,
 ) (TokenClaim, string, error) {
-	ENV, err := godotenv.Read(".env")
-	if err != nil {
-		return nil, "", err
-	}
 	now := time.Now().Unix()
 	exp := now + expire_seconds
 
 	c := &Claim{UserId: id, FirstName: first_name, OtherNames: other_names, Role: role, IssuedAt: now, ExpiresAt: int64(exp)}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
 
-	tokenString, err := token.SignedString([]byte(ENV["JWT_SECRET"]))
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		return nil, "", err
 	}

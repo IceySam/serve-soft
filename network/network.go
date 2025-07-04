@@ -10,7 +10,7 @@ type NetHandler struct {
 }
 
 func NewNetwork(mux *http.ServeMux, middlewares ...map[string]GeneralMiddleWare) *NetHandler {
-	mid := map[string]GeneralMiddleWare{"auth": auth, "general": general, "whitelist": whitelist}
+	mid := map[string]GeneralMiddleWare{"auth": auth, "general": general, "whitelist": whitelist, "logging": logging}
 	if len(middlewares) > 0 {
 		mid = middlewares[0]
 	}

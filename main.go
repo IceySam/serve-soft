@@ -1,9 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/IceySam/serve-soft/db"
 	"github.com/joho/godotenv"
@@ -29,11 +29,11 @@ func main() {
 	// log.Println("Server started\nListening on port:3000...")
 	// http.ListenAndServe(":3000", mux)
 
-	ENV, err := godotenv.Read(".env")
+	err := godotenv.Load() // defaults to .env if exists
 	if err != nil {
 		log.Fatal(err)
 	}
-	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", ENV["DB_USER"], ENV["DB_PASSWORD"], ENV["DB_HOST"], ENV["DB_PORT"], ENV["DB_NAME"])
+	mysqlConStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
 	// conn, err := db.New("postgres", "postgres://postgres:S@mmy123@localhost:5432/sam")
 	conn, err := db.New("mysql", mysqlConStr)
@@ -43,9 +43,12 @@ func main() {
 	defer conn.Close()
 
 	q := db.Query{Conn: conn}
-	// err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
-	// lastId, err := q.Insert(&container{Reference: "general78"})
-	lastId, err := q.Insert(&car{Brand: "Lambda",Model: "Yeti", Year: 2019})
+	err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
+  if err != nil {
+		log.Fatal(err)
+	}
+	lastId, err := q.Insert(&container{Reference: "general78"})
+	// lastId, err := q.Insert(&car{Brand: "Lambda", Model: "Yeti", Year: 2019})
 	// lastId, err := q.InsertCtx(context.Background(), &car{Brand: "Sonata", Model: "brail", Year: 2020})
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 1,
@@ -74,14 +77,14 @@ func main() {
 	// c := car{}
 	// err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
-	cars := make([]car, 0)
+	// cars := make([]car, 0)
 	// err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
 	// containers := make([]container, 0)
 	// err = q.Find(&container{}).Many(&containers)
-	err = q.Find(&car{}).Where(map[string]interface{}{"brand": "Lambda"}).ManyCtx(context.Background(), &cars)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// fmt.Println(containers)
-	fmt.Println(lastId, cars)
+	// err = q.Find(&car{}).Where(map[string]interface{}{"brand": "Lambda"}).ManyCtx(context.Background(), &cars)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	fmt.Println(lastId)
+	// fmt.Println(lastId, cars)
 }
