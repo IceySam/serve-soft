@@ -69,15 +69,15 @@ func logging(handler http.Handler) http.HandlerFunc {
 func general(handler http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := Responses{}
-		secretKey := strings.TrimSpace(r.Header.Get("SECRET_KEY"))
+		secretKey := strings.TrimSpace(r.Header.Get("Secret-Key"))
 
 		if secretKey == "" {
-			res.RespondForbidden(w, r, "SECRET_KEY is required")
+			res.RespondForbidden(w, r, "Secret-Key is required")
 			return
 		}
 
 		if secretKey != os.Getenv("SECRET_KEY") {
-			res.RespondForbidden(w, r, "Invalid SECRET_KEY")
+			res.RespondForbidden(w, r, "Invalid Secret-Key")
 			return
 		}
 		
