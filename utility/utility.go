@@ -86,7 +86,7 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 
 		if value != nil {
 			if structField.Type.Kind() == reflect.String {
-				structValue.Set(reflect.ValueOf(fmt.Sprintf("%v",value)))
+				structValue.Set(reflect.ValueOf(fmt.Sprintf("%v", value)))
 			} else if structField.Type.Kind() == reflect.Bool {
 				b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
 				if err != nil {
@@ -104,6 +104,34 @@ func ToStruct(m map[string]interface{}, i interface{}) error {
 	}
 
 	return nil
+}
+
+func ToMapArray(i interface{}) ([]map[string]interface{}, reflect.Type, string, error) {
+	val := reflect.ValueOf(i)
+	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Slice {
+		return nil, nil, "", fmt.Errorf("requires pointer to slice, got %T", i)
+	}
+
+	ty := val.Elem().Type().Elem()
+	if ty.Kind() != reflect.Struct {
+		return nil, ty, "", fmt.Errorf("requires slice of struct, got slice of %s", ty.Kind())
+	}
+
+	name := strings.ToLower(strings.Split(ty.String(), ".")[1])
+	sliceValue := val.Elem()
+
+	m := make([]map[string]interface{}, sliceValue.Len())
+	for i := 0; i < sliceValue.Len(); i++ {
+		elem := sliceValue.Index(i)
+		row := make(map[string]interface{})
+		for f := 0; f < ty.NumField(); f++ {
+			field := ty.Field(f)
+			row[field.Name] = elem.Field(f).Interface()
+		}
+		m[i] = row
+	}
+
+	return m, ty, name, nil
 }
 
 func ToStructArray(m []map[string]interface{}, i interface{}) error {
@@ -150,7 +178,7 @@ func ToStructArray(m []map[string]interface{}, i interface{}) error {
 			}
 			if value != nil {
 				if structField.Type.Kind() == reflect.String {
-					structValue.Set(reflect.ValueOf(fmt.Sprintf("%v",value)))
+					structValue.Set(reflect.ValueOf(fmt.Sprintf("%v", value)))
 				} else if structField.Type.Kind() == reflect.Bool {
 					b, err := strconv.ParseBool(fmt.Sprintf("%v", value))
 					if err != nil {

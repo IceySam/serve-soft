@@ -185,6 +185,149 @@ func (q Query) TxInsertCtx(ctx context.Context, tx *sql.Tx, i interface{}) (int6
 	return lastId, nil
 }
 
+// TX insert many into table
+func (q Query) TxInsertMany(tx *sql.Tx, items interface{}) (int64, error) {
+  m, _, name, err := utility.ToMapArray(items)
+  if err != nil {
+    return 0, err
+  }
+  if len(m) == 0 {
+    return 0, nil
+  }
+
+  // collect keys and build placeholders in one loop
+  keys := make([]string, 0, len(m[0]))
+  placeholders := make([]string, 0, len(m[0]))
+  for k := range m[0] {
+    keys = append(keys, fmt.Sprintf("`%s`", k))
+    placeholders = append(placeholders, "?")
+  }
+
+  // build query
+  var sb strings.Builder
+  sb.WriteString(fmt.Sprintf("INSERT INTO `%s` (%s) VALUES ", name, strings.Join(keys, ", ")))
+
+  for i := range m {
+    sb.WriteString("(")
+    sb.WriteString(strings.Join(placeholders, ", "))
+    sb.WriteString(")")
+    if i+1 < len(m) {
+      sb.WriteString(", ")
+    }
+  }
+
+  // flatten values in correct key order
+  values := make([]interface{}, 0, len(m)*len(keys))
+  for i := range m {
+    for _, k := range keys {
+      values = append(values, m[i][strings.Trim(k, "`")])
+    }
+  }
+
+  // execute
+  res, err := tx.Exec(sb.String(), values...)
+  if err != nil {
+    return 0, err
+  }
+
+  return res.RowsAffected()
+}
+
+// insert many into table
+func (q Query) InsertMany(items interface{}) (int64, error) {
+  m, _, name, err := utility.ToMapArray(items)
+  if err != nil {
+    return 0, err
+  }
+  if len(m) == 0 {
+    return 0, nil
+  }
+
+  // collect keys and build placeholders in one loop
+  keys := make([]string, 0, len(m[0]))
+  placeholders := make([]string, 0, len(m[0]))
+  for k := range m[0] {
+    keys = append(keys, fmt.Sprintf("`%s`", k))
+    placeholders = append(placeholders, "?")
+  }
+
+  // build query
+  var sb strings.Builder
+  sb.WriteString(fmt.Sprintf("INSERT INTO `%s` (%s) VALUES ", name, strings.Join(keys, ", ")))
+  for i := range m {
+    sb.WriteString("(")
+    sb.WriteString(strings.Join(placeholders, ", "))
+    sb.WriteString(")")
+    if i+1 < len(m) {
+      sb.WriteString(", ")
+    }
+  }
+
+  // flatten values in correct key order
+  values := make([]interface{}, 0, len(m)*len(keys))
+  for i := range m {
+    for _, k := range keys {
+      values = append(values, m[i][strings.Trim(k, "`")])
+    }
+  }
+
+  // execute
+  res, err := q.Conn.Exec(sb.String(), values...)
+  if err != nil {
+    return 0, err
+  }
+
+  return res.RowsAffected()
+}
+
+// TX insert many into table with context
+func (q Query) TxInsertManyCtx(ctx context.Context, tx *sql.Tx, items interface{}) (int64, error) {
+  m, _, name, err := utility.ToMapArray(items)
+  if err != nil {
+    return 0, err
+  }
+  if len(m) == 0 {
+    return 0, nil
+  }
+
+  // collect keys and build placeholders in one loop
+  keys := make([]string, 0, len(m[0]))
+  placeholders := make([]string, 0, len(m[0]))
+  for k := range m[0] {
+    keys = append(keys, fmt.Sprintf("`%s`", k))
+    placeholders = append(placeholders, "?")
+  }
+
+  // build query
+  var sb strings.Builder
+  sb.WriteString(fmt.Sprintf("INSERT INTO `%s` (%s) VALUES ", name, strings.Join(keys, ", ")))
+
+  for i := range m {
+    sb.WriteString("(")
+    sb.WriteString(strings.Join(placeholders, ", "))
+    sb.WriteString(")")
+    if i+1 < len(m) {
+      sb.WriteString(", ")
+    }
+  }
+
+  // flatten values in correct key order
+  values := make([]interface{}, 0, len(m)*len(keys))
+  for i := range m {
+    for _, k := range keys {
+      values = append(values, m[i][strings.Trim(k, "`")])
+    }
+  }
+
+  // execute
+  res, err := tx.ExecContext(ctx, sb.String(), values...)
+  if err != nil {
+    return 0, err
+  }
+
+  return res.RowsAffected()
+}
+
 func prepareInsert(i interface{}) (string, []interface{}, error) {
 	m, _, name, err := utility.ToMap(i)
 	if err != nil {
@@ -197,7 +340,7 @@ func prepareInsert(i interface{}) (string, []interface{}, error) {
 
 	for k, v := range m {
 		if v != nil {
-			keys = append(keys, fmt.Sprintf("`%s`",k))	
+			keys = append(keys, fmt.Sprintf("`%s`", k))
 			placeholders = append(placeholders, "?")
 			values = append(values, v)
 		}

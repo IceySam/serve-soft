@@ -2,6 +2,7 @@ package utility_test
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -150,6 +151,128 @@ func TestToStruct(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func TestToMapArray(t *testing.T) {
+	tests := []struct {
+		name       string
+		data       interface{}
+		wantErr    bool
+		errMessage string
+		wantLen    int
+		wantName   string
+	}{
+		{
+			name: "valid slice of animals",
+			data: &[]Animal{
+				{Id: 1, Niche: "Forest", Color: "Gray", Age: 2},
+				{Id: 2, Niche: "Savannah", Color: "Brown", Age: 5},
+			},
+			wantErr:  false,
+			wantLen:  2,
+			wantName: "animal",
+		},
+		{
+			name:       "not a pointer",
+			data:       []Animal{{Id: 1, Niche: "Forest", Color: "Gray", Age: 2}},
+			wantErr:    true,
+			errMessage: "requires pointer to slice",
+		},
+		{
+			name:       "not a slice",
+			data:       &Animal{Id: 1, Niche: "Forest", Color: "Gray", Age: 2},
+			wantErr:    true,
+			errMessage: "requires pointer to slice",
+		},
+		{
+			name:       "not struct slice",
+			data:       &[]int{1, 2, 3},
+			wantErr:    true,
+			errMessage: "requires slice of struct",
+		},
+		{
+			name:     "empty slice",
+			data:     &[]Animal{},
+			wantErr:  false,
+			wantLen:  0,
+			wantName: "animal",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, ty, name, err := utility.ToMapArray(tt.data)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ToMapArray() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr {
+				if !strings.Contains(err.Error(), tt.errMessage) {
+					t.Errorf("expected error message to contain %q, got %v", tt.errMessage, err.Error())
+				}
+				return
+			}
+
+			// check type kind
+			if ty.Kind() != reflect.Struct {
+				t.Errorf("expected struct kind, got %v", ty.Kind())
+			}
+
+			// check struct name
+			if name != tt.wantName {
+				t.Errorf("expected name %q, got %q", tt.wantName, name)
+			}
+
+			// check length
+			if len(m) != tt.wantLen {
+				t.Errorf("expected map length %d, got %d", tt.wantLen, len(m))
+			}
+
+			// check data correctness if not empty
+			if tt.wantLen > 0 {
+				first := m[0]
+				if first["Niche"] != "Forest" || first["Color"] != "Gray" || first["Age"] != int64(2) {
+					t.Errorf("unexpected first element: %#v", first)
+				}
+			}
+		})
+	}
+}
+
+func makeAnimals(n int) []Animal {
+	animals := make([]Animal, n)
+	for i := 0; i < n; i++ {
+		animals[i] = Animal{
+			Id:    int64(i),
+			Niche: "Forest",
+			Color: "Gray",
+			Age:   int64(i % 10),
+		}
+	}
+	return animals
+}
+
+func BenchmarkToMapArray(b *testing.B) {
+	sizes := []int{10, 100, 1000, 10000}
+
+	for _, size := range sizes {
+		b.Run(
+			// name of sub-benchmark
+			// e.g. "size=1000"
+			"size="+fmt.Sprint(size),
+			func(b *testing.B) {
+				data := makeAnimals(size)
+				for i := 0; i < b.N; i++ {
+					_, _, _, err := utility.ToMapArray(&data)
+					if err != nil {
+						b.Fatalf("unexpected error: %v", err)
+					}
+				}
+			},
+		)
 	}
 }
 
@@ -306,8 +429,8 @@ func TestParseAny(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got:= utility.ParseAny(tt.input)
-			
+			got := utility.ParseAny(tt.input)
+
 			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
 				t.Errorf("ParseAny() got = %v, want %v", got, tt.want)
 			}
@@ -316,40 +439,40 @@ func TestParseAny(t *testing.T) {
 }
 
 func TestParseAnyStr(t *testing.T) {
-    type testCase struct {
-        input string
-        expected any
-    }
+	type testCase struct {
+		input    string
+		expected any
+	}
 
-    testCases := []testCase{
-        // Integer parsing
-        {"123", int64(123)},
-        {"-456", int64(-456)},
-        {"0", int64(0)},
-        {"  100  ", int64(100)},
+	testCases := []testCase{
+		// Integer parsing
+		{"123", int64(123)},
+		{"-456", int64(-456)},
+		{"0", int64(0)},
+		{"  100  ", int64(100)},
 
-        // Float parsing
-        {"3.14159", float64(3.14159)},
-        {"-2.5e-3", float64(-0.0025)},
-        {"1.2345000", float64(1.2345)},
+		// Float parsing
+		{"3.14159", float64(3.14159)},
+		{"-2.5e-3", float64(-0.0025)},
+		{"1.2345000", float64(1.2345)},
 
-        // Boolean parsing
-        {"true", true},
-        {"false", false},
-        {"TRUE", true},
-        {"  FALSE  ", false},
+		// Boolean parsing
+		{"true", true},
+		{"false", false},
+		{"TRUE", true},
+		{"  FALSE  ", false},
 
-        // Returning original string
-        {"hello", "hello"},
-        {"12.3abc", "12.3abc"},
-        {"true123", "true123"},
-        {"", ""},
-    }
+		// Returning original string
+		{"hello", "hello"},
+		{"12.3abc", "12.3abc"},
+		{"true123", "true123"},
+		{"", ""},
+	}
 
-    for _, tc := range testCases {
-        result := utility.ParseAnyStr(tc.input)
-        if result != tc.expected {
-            t.Errorf("ParseAnyStr(%q) = %v, expected %v", tc.input, result, tc.expected)
-        }
-    }
+	for _, tc := range testCases {
+		result := utility.ParseAnyStr(tc.input)
+		if result != tc.expected {
+			t.Errorf("ParseAnyStr(%q) = %v, expected %v", tc.input, result, tc.expected)
+		}
+	}
 }
