@@ -49,7 +49,7 @@ func GenerateClaim(
 
 	c := &Claim{UserId: id, FirstName: first_name, OtherNames: other_names, Role: role, IssuedAt: now, ExpiresAt: int64(exp)}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
-
+  
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		return nil, "", err
