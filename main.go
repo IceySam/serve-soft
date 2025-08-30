@@ -43,19 +43,30 @@ func main() {
 	defer conn.Close()
 
 	q := db.Query{Conn: conn}
-	err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
+	// err = q.Create("container", "id INT NOT NULL AUTO_INCREMENT", "reference VARCHAR(255)", "name VARCHAR(255) NULL", "PRIMARY KEY (id)")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	err = q.Create("car", "id INT NOT NULL AUTO_INCREMENT", "brand VARCHAR(255)", "model VARCHAR(255) NOT NULL", "year INT NOT NULL", "PRIMARY KEY (id)")
 	if err != nil {
 		log.Fatal(err)
 	}
-	lastId, err := q.Insert(&container{Reference: "general78"})
+	// lastId, err := q.Insert(&container{Reference: "general78"})
 	// lastId, err := q.Insert(&car{Brand: "Lambda", Model: "Yeti", Year: 2019})
+	// rows, err := q.InsertMany(&[]car{
+	// 	{Brand: "Lambda", Model: "Yeti", Year: 2019},
+	// 	{Brand: "Yoko", Model: "Zara", Year: 2020},
+	// 	{Brand: "IVM", Model: "Fly", Year: 2020},
+	// 	{Brand: "Ferari", Model: "Snake", Year: 2024},
+	// 	{Brand: "Lambda", Model: "Ikenga", Year: 2013},
+	// })
 	// lastId, err := q.InsertCtx(context.Background(), &car{Brand: "Sonata", Model: "brail", Year: 2020})
-  // rows, err := q.InsertMany(&[]container{
-  //   {Reference: "container1", Name: "First Container"},
-  //   {Reference: "container2", Name: "Second Container"},
-  //   {Reference: "container3", Name: "Third Container"},
-  //   {Reference: "container4", Name: "Fourth Container"},
-  // })
+	// rows, err := q.InsertMany(&[]container{
+	//   {Reference: "container1", Name: "First Container"},
+	//   {Reference: "container2", Name: "Second Container"},
+	//   {Reference: "container3", Name: "Third Container"},
+	//   {Reference: "container4", Name: "Fourth Container"},
+	// })
 	// lastId := rows
 	// err = q.Update(&car{}).Set(map[string]any{"brand": "Lexus", "model": "lion"}).Where(map[string]any{
 	// 	"id": 1,
@@ -84,14 +95,14 @@ func main() {
 	// c := car{}
 	// err = q.Find(&car{}).One(&c)
 	// err = q.Find(&car{}).OneCtx(context.Background(), &c)
-	// cars := make([]car, 0)
-	// err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Many(&cars)
+	cars := make([]car, 0)
+	err = q.Find(&car{}).Where([]map[string]interface{}{{"year": 2020}, {"year": 2023}}).Take(2).Skip(2).Many(&cars)
 	// containers := make([]container, 0)
 	// err = q.Find(&container{}).Many(&containers)
 	// err = q.Find(&car{}).Where(map[string]interface{}{"brand": "Lambda"}).ManyCtx(context.Background(), &cars)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	fmt.Println(lastId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(cars)
 	// fmt.Println(lastId, cars)
 }
